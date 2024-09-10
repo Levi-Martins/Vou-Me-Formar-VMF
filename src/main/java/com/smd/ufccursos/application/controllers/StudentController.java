@@ -1,11 +1,19 @@
 package com.smd.ufccursos.application.controllers;
 
+import com.smd.ufccursos.domain.DTO.PageTO;
+import com.smd.ufccursos.domain.DTO.PaginationTO;
+import com.smd.ufccursos.domain.DTO.StudentTO;
+import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Student;
 import com.smd.ufccursos.domain.ports.servicePort.StudentServicePort;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("student")
@@ -17,8 +25,40 @@ public class StudentController {
         this.studentServicePort = studentServicePort;
     }
 
+    @Operation(summary = "Página com 10 estudantes")
+    @GetMapping
+    public ResponseEntity<PageTO<Student>> findAll(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size
+    ) {
+        PaginationTO paginationTO = new PaginationTO(page, size);
+        Map<String, Object> params = new HashMap<>();
+        paginationTO.setParams(params);
+        return ResponseEntity.ok(studentServicePort.findAll(paginationTO));
+    }
+
+    @Operation(summary = "Chamar estudante")
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<Student> findById(@PathVariable UUID id){
+        return ResponseEntity.ok().body(studentServicePort.findById(id));
+    }
+
     @PostMapping
-    public Student create(@RequestBody Student student){
-        return  studentServicePort.createStudent(student);
+    @Operation(summary = "Criar estudante")
+    public ResponseEntity<Student> create(@RequestBody StudentTO studentTO) {
+        return new ResponseEntity<>(studentServicePort.save(studentTO), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Editar estudante")
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<Student> update(@PathVariable UUID id, @RequestBody Student student) {
+        return ResponseEntity.ok().body(studentServicePort.update(id, student));
+    }
+
+    @Operation(summary = "Deletar estudante")
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        studentServicePort.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

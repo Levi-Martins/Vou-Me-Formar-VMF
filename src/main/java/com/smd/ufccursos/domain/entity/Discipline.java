@@ -1,10 +1,7 @@
 package com.smd.ufccursos.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
@@ -13,6 +10,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Discipline extends BaseEntity{
 
     private String name;
@@ -27,7 +25,7 @@ public class Discipline extends BaseEntity{
 
     private Integer semester;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 

@@ -1,16 +1,15 @@
 package com.smd.ufccursos.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Phone extends BaseEntity{
 
     @Column(nullable = false)
@@ -19,7 +18,8 @@ public class Phone extends BaseEntity{
     @Column(nullable = false)
     private String number;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+
+    @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 }

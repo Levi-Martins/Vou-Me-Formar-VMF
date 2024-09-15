@@ -29,8 +29,13 @@ public class Discipline extends BaseEntity{
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @OneToMany(mappedBy = "discipline",cascade = CascadeType.ALL, orphanRemoval = true)
-    Set<Prerequisite> prerequisites;
+    @ManyToMany
+    @JoinTable(
+            name = "discipline_prerequisites",
+            joinColumns = @JoinColumn(name = "discipline_id"),
+            inverseJoinColumns = @JoinColumn(name = "prerequisite_id")
+    )
+    private Set<Discipline> prerequisites;
 
 
 }

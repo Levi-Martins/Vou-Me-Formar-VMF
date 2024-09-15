@@ -1,17 +1,8 @@
 package com.smd.ufccursos.infra.init;
 
-import com.smd.ufccursos.domain.ports.repositoryPort.CourseRepositoryPort;
-import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
-import com.smd.ufccursos.domain.ports.repositoryPort.PhoneRepositoryPort;
-import com.smd.ufccursos.domain.ports.repositoryPort.StudentRepositoryPort;
-import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
-import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
-import com.smd.ufccursos.domain.ports.servicePort.PhoneServicePort;
-import com.smd.ufccursos.domain.ports.servicePort.StudentServicePort;
-import com.smd.ufccursos.domain.service.CourseService;
-import com.smd.ufccursos.domain.service.DisciplineService;
-import com.smd.ufccursos.domain.service.PhoneService;
-import com.smd.ufccursos.domain.service.StudentService;
+import com.smd.ufccursos.domain.ports.repositoryPort.*;
+import com.smd.ufccursos.domain.ports.servicePort.*;
+import com.smd.ufccursos.domain.service.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

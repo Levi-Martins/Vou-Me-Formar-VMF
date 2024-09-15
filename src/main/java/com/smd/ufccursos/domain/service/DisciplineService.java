@@ -9,8 +9,11 @@ import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class DisciplineService implements DisciplineServicePort {
 
@@ -39,6 +42,12 @@ public class DisciplineService implements DisciplineServicePort {
     public Discipline save(DisciplineTO disciplineTO) {
         Course course = courseServicePort.findById(disciplineTO.getCourseId());
 
+        Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?
+                disciplineTO.getPrerequisiteIds().stream()
+                        .map(this::findById)
+                        .collect(Collectors.toSet()) :
+                Collections.emptySet();
+
         Discipline discipline = Discipline.builder()
                 .name(disciplineTO.getName())
                 .typeOfDiscipline(disciplineTO.getTypeOfDiscipline())
@@ -47,14 +56,17 @@ public class DisciplineService implements DisciplineServicePort {
                 .description(disciplineTO.getDescription())
                 .semester(disciplineTO.getSemester())
                 .course(course)
+                .prerequisites(prerequisites)
                 .build();
 
         return disciplineRepositoryPort.save(discipline);
     }
 
+
     @Override
     public Discipline update(UUID id, DisciplineTO disciplineTO) {
         Discipline discipline = findById(id);
+
         discipline.setName(disciplineTO.getName());
         discipline.setTypeOfDiscipline(disciplineTO.getTypeOfDiscipline());
         discipline.setWorkload(disciplineTO.getWorkload());
@@ -62,8 +74,20 @@ public class DisciplineService implements DisciplineServicePort {
         discipline.setDescription(disciplineTO.getDescription());
         discipline.setSemester(disciplineTO.getSemester());
 
+        Course course = courseServicePort.findById(disciplineTO.getCourseId());
+        discipline.setCourse(course);
+
+        Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?
+                disciplineTO.getPrerequisiteIds().stream()
+                        .map(this::findById)
+                        .collect(Collectors.toSet()) :
+                Collections.emptySet();
+
+        discipline.setPrerequisites(prerequisites);
+
         return disciplineRepositoryPort.save(discipline);
     }
+
 
     @Override
     public void deleteById(UUID id) {

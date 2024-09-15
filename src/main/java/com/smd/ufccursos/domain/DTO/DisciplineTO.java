@@ -3,6 +3,7 @@ package com.smd.ufccursos.domain.DTO;
 import com.smd.ufccursos.domain.entity.TypeOfDiscipline;
 import lombok.*;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -24,5 +25,7 @@ public class DisciplineTO {
     private Integer semester;
 
     private UUID courseId;
+
+    private Set<UUID> prerequisiteIds;
 
 }

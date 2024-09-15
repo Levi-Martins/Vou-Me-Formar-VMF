@@ -1,11 +1,11 @@
 package com.smd.ufccursos.application.controllers;
 
-import com.smd.ufccursos.domain.DTO.*;
-import com.smd.ufccursos.domain.entity.Course;
+import com.smd.ufccursos.domain.DTO.PageTO;
+import com.smd.ufccursos.domain.DTO.PaginationTO;
+import com.smd.ufccursos.domain.DTO.PhoneTO;
+import com.smd.ufccursos.domain.DTO.PhoneWithStudentTO;
 import com.smd.ufccursos.domain.entity.Phone;
-import com.smd.ufccursos.domain.entity.Student;
 import com.smd.ufccursos.domain.ports.servicePort.PhoneServicePort;
-import com.smd.ufccursos.domain.service.PhoneService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

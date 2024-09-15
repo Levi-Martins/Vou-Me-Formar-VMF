@@ -3,7 +3,6 @@ package com.smd.ufccursos.infra.repository;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.entity.Phone;
-import com.smd.ufccursos.domain.entity.Student;
 import com.smd.ufccursos.domain.ports.repositoryPort.PhoneRepositoryPort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

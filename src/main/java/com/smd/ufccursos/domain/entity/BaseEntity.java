@@ -1,9 +1,11 @@
 package com.smd.ufccursos.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.util.UUID;
 
+@Data
 @MappedSuperclass
 public class BaseEntity {
 

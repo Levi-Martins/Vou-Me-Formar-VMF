@@ -5,6 +5,7 @@ import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +44,7 @@ public class CourseController {
 
     @PostMapping
     @Operation(summary = "Criar curso")
-    public ResponseEntity<Course> create(@RequestBody Course course) {
+    public ResponseEntity<Course> create(@RequestBody @Valid Course course) {
         return new ResponseEntity<>(courseServicePort.save(course), HttpStatus.CREATED);
     }
 

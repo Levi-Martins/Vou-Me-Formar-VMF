@@ -3,6 +3,7 @@ package com.smd.ufccursos.domain.service;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.entity.Course;
+import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
 import com.smd.ufccursos.domain.ports.repositoryPort.CourseRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 
@@ -27,7 +28,7 @@ public class CourseService implements CourseServicePort {
     public Course findById(UUID id) {
         Optional<Course> course = courseRepositoryPort.findById(id);
         if (course.isEmpty()) {
-            throw new RuntimeException("Course not found");
+            throw new ObjectNotFoundException("Course not found ");
         }
         return course.get();
     }

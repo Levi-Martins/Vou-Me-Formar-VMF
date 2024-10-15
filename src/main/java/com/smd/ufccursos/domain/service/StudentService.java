@@ -2,7 +2,7 @@ package com.smd.ufccursos.domain.service;
 
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
-import com.smd.ufccursos.domain.DTO.PhoneTO;
+import com.smd.ufccursos.domain.DTO.request.PhoneTO;
 import com.smd.ufccursos.domain.DTO.request.StudentTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Phone;

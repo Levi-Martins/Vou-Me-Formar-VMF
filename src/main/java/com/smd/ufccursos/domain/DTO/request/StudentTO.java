@@ -1,6 +1,5 @@
 package com.smd.ufccursos.domain.DTO.request;
 
-import com.smd.ufccursos.domain.DTO.PhoneTO;
 import lombok.*;
 
 import java.util.List;

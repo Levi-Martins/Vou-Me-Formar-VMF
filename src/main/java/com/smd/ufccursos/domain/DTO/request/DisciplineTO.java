@@ -1,4 +1,4 @@
-package com.smd.ufccursos.domain.DTO;
+package com.smd.ufccursos.domain.DTO.request;
 
 import com.smd.ufccursos.domain.entity.TypeOfDiscipline;
 import lombok.*;

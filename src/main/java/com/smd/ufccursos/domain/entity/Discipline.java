@@ -1,6 +1,8 @@
 package com.smd.ufccursos.domain.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.Set;
@@ -13,12 +15,16 @@ import java.util.Set;
 @Builder
 public class Discipline extends BaseEntity{
 
+    @NotBlank
     private String name;
 
+    @NotNull
     private TypeOfDiscipline typeOfDiscipline;
 
+    @NotNull
     private Integer workload;
 
+    @NotNull
     private Integer classCredits;
 
     private String description;

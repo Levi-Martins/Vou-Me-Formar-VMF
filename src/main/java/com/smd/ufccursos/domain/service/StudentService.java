@@ -2,7 +2,8 @@ package com.smd.ufccursos.domain.service;
 
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
-import com.smd.ufccursos.domain.DTO.StudentTO;
+import com.smd.ufccursos.domain.DTO.PhoneTO;
+import com.smd.ufccursos.domain.DTO.request.StudentTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Phone;
 import com.smd.ufccursos.domain.entity.Student;
@@ -10,7 +11,6 @@ import com.smd.ufccursos.domain.ports.repositoryPort.StudentRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import com.smd.ufccursos.domain.ports.servicePort.StudentServicePort;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,16 +71,34 @@ public class StudentService implements StudentServicePort {
 
 
     @Override
-    public Student update(UUID id, Student student) {
-       Student studentToUpdate = findById(id);
-       studentToUpdate.setName(student.getName());
-       studentToUpdate.setEmail(student.getEmail());
-       studentToUpdate.setRegistration(student.getRegistration());
-       studentToUpdate.setRegistrationDate(LocalDate.now());
-       studentToUpdate.setCourse(student.getCourse());
-       studentToUpdate.setPhones(student.getPhones());
-       return studentRepositoryPort.save(studentToUpdate);
+    public Student update(UUID id, StudentTO studentTO) {
+        Student studentToUpdate = findById(id);
+
+        studentToUpdate.setName(studentTO.getName());
+        studentToUpdate.setEmail(studentTO.getEmail());
+        studentToUpdate.setRegistration(studentTO.getRegistration());
+
+        if (studentTO.getCourseId() != null) {
+            Course course = courseServicePort.findById(studentTO.getCourseId());
+            studentToUpdate.setCourse(course);
+        }
+
+        if (studentTO.getPhones() != null && !studentTO.getPhones().isEmpty()) {
+            List<Phone> existingPhones = studentToUpdate.getPhones();
+
+            for (PhoneTO phoneTO : studentTO.getPhones()) {
+                Phone newPhone = Phone.builder()
+                        .ddd(phoneTO.getDdd())
+                        .number(phoneTO.getNumber())
+                        .student(studentToUpdate)
+                        .build();
+                existingPhones.add(newPhone);
+            }
+        }
+
+        return studentRepositoryPort.save(studentToUpdate);
     }
+
 
     @Override
     public void deleteById(UUID id) {

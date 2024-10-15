@@ -2,6 +2,9 @@ package com.smd.ufccursos.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -15,17 +18,21 @@ import java.util.List;
 @Builder
 public class Student extends BaseEntity {
 
+    @NotBlank
     private String name;
 
+    @NotBlank
+    @Email
     private String email;
 
+    @NotNull
     @Column(unique = true)
     private Integer registration;
 
     @JsonIgnore
     private LocalDate registrationDate;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 

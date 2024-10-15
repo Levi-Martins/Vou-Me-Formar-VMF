@@ -2,6 +2,7 @@ package com.smd.ufccursos.application.controllers;
 
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
+import com.smd.ufccursos.domain.DTO.request.CourseDTORequest;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,14 +45,14 @@ public class CourseController {
 
     @PostMapping
     @Operation(summary = "Criar curso")
-    public ResponseEntity<Course> create(@RequestBody @Valid Course course) {
-        return new ResponseEntity<>(courseServicePort.save(course), HttpStatus.CREATED);
+    public ResponseEntity<Course> create(@RequestBody @Valid CourseDTORequest courseDTORequest) {
+        return new ResponseEntity<>(courseServicePort.save(courseDTORequest), HttpStatus.CREATED);
     }
 
     @Operation(summary = "Editar curso")
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Course> update(@PathVariable UUID id, @RequestBody Course course) {
-        return ResponseEntity.ok().body(courseServicePort.update(id, course));
+    public ResponseEntity<Course> update(@PathVariable UUID id, @RequestBody @Valid CourseDTORequest courseDTORequest) {
+        return ResponseEntity.ok().body(courseServicePort.update(id, courseDTORequest));
     }
 
     @Operation(summary = "Deletar curso")

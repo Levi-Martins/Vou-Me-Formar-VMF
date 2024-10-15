@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -81,4 +82,27 @@ public class GlobalExceptionHandler {
         logger.error("DataIntegrityViolationException: ", ex);
         return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessage));
     }
+
+    @ExceptionHandler(TransactionSystemException.class)
+    public ResponseEntity<ErroResponse> handleTransactionSystemException(TransactionSystemException ex) {
+        var status = HttpStatus.BAD_REQUEST;
+        String errorMessage = "Transaction error occurred.";
+
+        logger.error("TransactionSystemException: ", ex);
+
+        if (ex.getRootCause() instanceof ConstraintViolationException) {
+            ConstraintViolationException constraintViolationException = (ConstraintViolationException) ex.getRootCause();
+            List<String> errorMessages = constraintViolationException.getConstraintViolations().stream()
+                    .map(violation -> violation.getPropertyPath() + " " + violation.getMessage())
+                    .toList();
+            return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessages));
+        }
+
+        if (ex.getRootCause() instanceof DataIntegrityViolationException) {
+            errorMessage = "Data integrity violation error.";
+        }
+
+        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessage));
+    }
+
 }

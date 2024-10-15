@@ -2,8 +2,7 @@ package com.smd.ufccursos.application.controllers;
 
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
-import com.smd.ufccursos.domain.DTO.StudentTO;
-import com.smd.ufccursos.domain.entity.Course;
+import com.smd.ufccursos.domain.DTO.request.StudentTO;
 import com.smd.ufccursos.domain.entity.Student;
 import com.smd.ufccursos.domain.ports.servicePort.StudentServicePort;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,8 +50,8 @@ public class StudentController {
 
     @Operation(summary = "Editar estudante")
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Student> update(@PathVariable UUID id, @RequestBody Student student) {
-        return ResponseEntity.ok().body(studentServicePort.update(id, student));
+    public ResponseEntity<Student> update(@PathVariable UUID id, @RequestBody StudentTO studentTO) {
+        return ResponseEntity.ok().body(studentServicePort.update(id, studentTO));
     }
 
     @Operation(summary = "Deletar estudante")

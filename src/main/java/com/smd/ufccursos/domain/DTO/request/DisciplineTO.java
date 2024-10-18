@@ -14,6 +14,7 @@ import java.util.UUID;
 public class DisciplineTO {
     private String name;
 
+
     private TypeOfDiscipline typeOfDiscipline;
 
     private Integer workload;

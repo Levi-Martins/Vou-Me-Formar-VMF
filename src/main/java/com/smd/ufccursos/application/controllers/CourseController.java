@@ -28,11 +28,15 @@ public class CourseController {
     @Operation(summary = "Página com 10 cursos")
     @GetMapping
     public ResponseEntity<PageTO<Course>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String department,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         PaginationTO paginationTO = new PaginationTO(page, size);
         Map<String, Object> params = new HashMap<>();
+        params.put("name", name);
+        params.put("department", department);
         paginationTO.setParams(params);
         return ResponseEntity.ok(courseServicePort.findAll(paginationTO));
     }

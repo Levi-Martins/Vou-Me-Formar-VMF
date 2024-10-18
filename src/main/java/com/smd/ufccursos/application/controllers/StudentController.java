@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,11 +28,21 @@ public class StudentController {
     @Operation(summary = "Página com 10 estudantes")
     @GetMapping
     public ResponseEntity<PageTO<Student>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Integer registration,
+            @RequestParam(required = false) LocalDate registrationDate,
+            @RequestParam(required = false) UUID courseId,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         PaginationTO paginationTO = new PaginationTO(page, size);
         Map<String, Object> params = new HashMap<>();
+        params.put("name", name);
+        params.put("email", email);
+        params.put("registration", registration);
+        params.put("registrationDate", registrationDate);
+        params.put("courseId", courseId);
         paginationTO.setParams(params);
         return ResponseEntity.ok(studentServicePort.findAll(paginationTO));
     }

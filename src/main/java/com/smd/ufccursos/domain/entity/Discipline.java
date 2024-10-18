@@ -19,6 +19,7 @@ public class Discipline extends BaseEntity{
     private String name;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     private TypeOfDiscipline typeOfDiscipline;
 
     @NotNull

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: ufccursos
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/VMF
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin000
+      SERVER_PORT: 8080
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_DB: VMF
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin000
+    ports:
+      - "5431:5432"

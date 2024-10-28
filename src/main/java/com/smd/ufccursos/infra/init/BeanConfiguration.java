@@ -32,4 +32,14 @@ public class BeanConfiguration {
                                              StudentServicePort studentServicePort) {
         return new PhoneService(phoneRepositoryPort, studentServicePort);
     }
+
+    @Bean
+    public AuthorizationService authorizationService(UserRepositoryPort userRepositoryPort){
+        return new AuthorizationService(userRepositoryPort);
+    }
+
+    @Bean
+    public TokenService tokenService(){
+        return new TokenService();
+    }
 }

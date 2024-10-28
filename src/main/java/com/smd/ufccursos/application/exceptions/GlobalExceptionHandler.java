@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -40,6 +41,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponse> handleObjectNotFoundException(ObjectNotFoundException ex) {
         var status = HttpStatus.NOT_FOUND;
         logger.error("ObjectNotFoundException: ", ex);
+        return ResponseEntity.status(status).body(new ErroResponse(status.value(), ex.getMessage()));
+    }
+
+    //TODO: CONFERIR
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErroResponse> handleObjectNotFoundException(BadCredentialsException ex) {
+        var status = HttpStatus.FORBIDDEN;
+        logger.error("BadCredentialsException: ", ex);
         return ResponseEntity.status(status).body(new ErroResponse(status.value(), ex.getMessage()));
     }
 

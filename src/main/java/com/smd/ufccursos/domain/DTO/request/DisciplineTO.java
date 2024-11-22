@@ -14,7 +14,6 @@ import java.util.UUID;
 public class DisciplineTO {
     private String name;
 
-
     private TypeOfDiscipline typeOfDiscipline;
 
     private Integer workload;
@@ -28,5 +27,8 @@ public class DisciplineTO {
     private UUID courseId;
 
     private Set<UUID> prerequisiteIds;
+
+    private String disciplineCode;
+
 
 }

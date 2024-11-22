@@ -57,6 +57,7 @@ public class DisciplineService implements DisciplineServicePort {
                 .semester(disciplineTO.getSemester())
                 .course(course)
                 .prerequisites(prerequisites)
+                .disciplineCode(disciplineTO.getDisciplineCode())
                 .build();
 
         return disciplineRepositoryPort.save(discipline);

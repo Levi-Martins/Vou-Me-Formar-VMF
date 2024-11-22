@@ -42,4 +42,9 @@ public class BeanConfiguration {
     public TokenService tokenService(){
         return new TokenService();
     }
+
+    @Bean
+    public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort){
+        return new CSVImportService(disciplineServicePort);
+    }
 }

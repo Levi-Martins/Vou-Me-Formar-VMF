@@ -44,5 +44,8 @@ public class Discipline extends BaseEntity{
     )
     private Set<Discipline> prerequisites;
 
+    @NotNull
+    private String disciplineCode;
+
 
 }

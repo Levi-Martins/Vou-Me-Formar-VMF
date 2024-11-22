@@ -57,6 +57,7 @@ public class DisciplineService implements DisciplineServicePort {
                 .semester(disciplineTO.getSemester())
                 .course(course)
                 .prerequisites(prerequisites)
+                .disciplineCode(disciplineTO.getDisciplineCode())
                 .build();
 
         return disciplineRepositoryPort.save(discipline);
@@ -92,5 +93,14 @@ public class DisciplineService implements DisciplineServicePort {
     @Override
     public void deleteById(UUID id) {
         disciplineRepositoryPort.deleteById(id);
+    }
+
+    @Override
+    public Discipline findByDisciplineCode(String code) {
+        Optional<Discipline> discipline = disciplineRepositoryPort.findByDisciplineCode(code);
+        if (discipline.isEmpty()) {
+            throw new RuntimeException("Discipline not found");
+        }
+        return discipline.get();
     }
 }

@@ -14,4 +14,5 @@ public interface DisciplineServicePort {
     Discipline save(DisciplineTO disciplineTO);
     Discipline update(UUID id, DisciplineTO disciplineTO);
     void deleteById(UUID id);
+    Discipline findByDisciplineCode(String code);
 }

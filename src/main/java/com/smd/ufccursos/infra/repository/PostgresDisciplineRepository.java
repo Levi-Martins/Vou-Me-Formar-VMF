@@ -92,4 +92,9 @@ public class PostgresDisciplineRepository implements DisciplineRepositoryPort {
     public void deleteById(UUID id) {
         springDataDisciplineRepository.deleteById(id);
     }
+
+    @Override
+    public Optional<Discipline> findByDisciplineCode(String code) {
+        return springDataDisciplineRepository.findByDisciplineCode(code);
+    }
 }

@@ -94,4 +94,13 @@ public class DisciplineService implements DisciplineServicePort {
     public void deleteById(UUID id) {
         disciplineRepositoryPort.deleteById(id);
     }
+
+    @Override
+    public Discipline findByDisciplineCode(String code) {
+        Optional<Discipline> discipline = disciplineRepositoryPort.findByDisciplineCode(code);
+        if (discipline.isEmpty()) {
+            throw new RuntimeException("Discipline not found");
+        }
+        return discipline.get();
+    }
 }

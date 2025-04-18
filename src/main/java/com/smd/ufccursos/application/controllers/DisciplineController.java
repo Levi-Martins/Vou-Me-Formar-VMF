@@ -3,6 +3,7 @@ package com.smd.ufccursos.application.controllers;
 import com.smd.ufccursos.domain.DTO.request.DisciplineTO;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
+import com.smd.ufccursos.domain.DTO.response.DisciplineResponseTO;
 import com.smd.ufccursos.domain.entity.Discipline;
 import com.smd.ufccursos.domain.entity.TypeOfDiscipline;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
@@ -29,7 +30,7 @@ public class DisciplineController {
 
     @Operation(summary = "Página com 10 disciplinas")
     @GetMapping
-    public ResponseEntity<PageTO<Discipline>> findAll(
+    public ResponseEntity<PageTO<DisciplineResponseTO>> findAll(
             @RequestParam(required = false) String name,
             @Parameter(description = "Tipo da disciplina")
             @RequestParam(required = false) TypeOfDiscipline typeOfDiscipline,
@@ -44,7 +45,7 @@ public class DisciplineController {
         PaginationTO paginationTO = new PaginationTO(page, size);
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
-        params.put("typeOfDiscipline", typeOfDiscipline);  // Sem a necessidade de `valueOf`
+        params.put("typeOfDiscipline", typeOfDiscipline);
         params.put("workload", workload);
         params.put("classCredits", classCredits);
         params.put("semester", semester);

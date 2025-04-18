@@ -36,6 +36,7 @@ public class SecurityConfigurations {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/course").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/course").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/discipline").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

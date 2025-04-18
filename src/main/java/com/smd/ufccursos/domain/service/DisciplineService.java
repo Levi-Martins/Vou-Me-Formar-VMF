@@ -3,16 +3,14 @@ package com.smd.ufccursos.domain.service;
 import com.smd.ufccursos.domain.DTO.request.DisciplineTO;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
+import com.smd.ufccursos.domain.DTO.response.DisciplineResponseTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Discipline;
 import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DisciplineService implements DisciplineServicePort {
@@ -25,9 +23,12 @@ public class DisciplineService implements DisciplineServicePort {
         this.courseServicePort = courseServicePort;
     }
 
-    @Override
-    public PageTO<Discipline> findAll(PaginationTO paginationTO) {
-        return disciplineRepositoryPort.findAll(paginationTO);
+    public PageTO<DisciplineResponseTO> findAll(PaginationTO paginationTO) {
+        PageTO<Discipline> disciplines = disciplineRepositoryPort.findAll(paginationTO);
+        List<DisciplineResponseTO> response = disciplines.getContent().stream()
+                .map(DisciplineResponseTO::new)
+                .collect(Collectors.toList());
+        return PageTO.of(disciplines, response);
     }
 
     @Override

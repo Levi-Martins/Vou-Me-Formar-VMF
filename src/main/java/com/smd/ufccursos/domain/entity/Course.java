@@ -1,9 +1,7 @@
 package com.smd.ufccursos.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -29,4 +27,8 @@ public class Course extends BaseEntity{
     @JsonIgnore
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Discipline> disciplines;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "requirements_id")
+    private CourseRequirements requirements;
 }

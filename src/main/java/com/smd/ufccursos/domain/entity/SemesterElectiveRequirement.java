@@ -1,6 +1,7 @@
 package com.smd.ufccursos.domain.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ public class SemesterElectiveRequirement  extends BaseEntity {
     private Integer semester; // Ex: 4
     private Integer minEletivasRequired; // Ex: 4 eletivas mínimas
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private Course course;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_requirements_id")
+    private CourseRequirements courseRequirements;
 }

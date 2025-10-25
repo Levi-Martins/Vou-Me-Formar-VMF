@@ -9,4 +9,7 @@ public class CourseDTORequest {
     private String name;
 
     private String department;
+
+    private CourseRequirementsDTORequest requirements;
+
 }

@@ -3,6 +3,7 @@ package com.smd.ufccursos.application.controllers;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.DTO.request.CourseDTORequest;
+import com.smd.ufccursos.domain.DTO.response.CourseDTOResponse;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,8 +50,9 @@ public class CourseController {
 
     @PostMapping
     @Operation(summary = "Criar curso")
-    public ResponseEntity<Course> create(@RequestBody @Valid CourseDTORequest courseDTORequest) {
-        return new ResponseEntity<>(courseServicePort.save(courseDTORequest), HttpStatus.CREATED);
+    public ResponseEntity<CourseDTOResponse> create(@RequestBody @Valid CourseDTORequest courseDTORequest) {
+        CourseDTOResponse savedCourse = courseServicePort.save(courseDTORequest);
+        return new ResponseEntity<>(savedCourse, HttpStatus.CREATED);
     }
 
     @Operation(summary = "Editar curso")

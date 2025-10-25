@@ -1,7 +1,11 @@
 package com.smd.ufccursos.domain.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @AllArgsConstructor
@@ -11,32 +15,28 @@ import lombok.*;
 @Builder
 public class CourseRequirements extends BaseEntity {
 
-    // Horas obrigatórias e optativas
-    private Integer requiredMandatoryHours;
-    private Integer requiredOptionalHours;
-    private Integer requiredComplementaryHours;
+    private Integer requiredMandatoryHours;       // disciplinas obrigatórias
+    private Integer requiredOptionalHours;        // disciplinas optativas
+    private Integer requiredComplementaryHours;   // atividades complementares
+    private Integer tccHours;                     // 0 = não exige TCC
+    private Integer internshipHours;              // 0 = não exige estágio
+    private Integer extensionHours;               // 0 = não exige extensão
 
-    // TCC
-    private Boolean requiresTcc;
-    private Integer tccHours;
 
-    // Estágio
-    private Boolean requiresInternship;
-    private Integer internshipHours;
+    @OneToMany(mappedBy = "courseRequirements", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SemesterElectiveRequirement> semesterElectiveRequirementList;
 
-    // Extensão
-    private Boolean requiresExtension;
-    private Integer extensionHours;
-
-    // Eletivas
-    private Boolean hasEletives;
-
+    // Soma total de horas exigidas para formar
     public Integer getTotalRequiredHours() {
-        return requiredMandatoryHours
-                + requiredOptionalHours
-                + requiredComplementaryHours
-                + (requiresTcc != null && requiresTcc ? tccHours : 0)
-                + (requiresInternship != null && requiresInternship ? internshipHours : 0)
-                + (requiresExtension != null && requiresExtension ? extensionHours : 0);
+        return safe(requiredMandatoryHours)
+                + safe(requiredOptionalHours)
+                + safe(requiredComplementaryHours)
+                + safe(tccHours)
+                + safe(internshipHours)
+                + safe(extensionHours);
+    }
+
+    private int safe(Integer value) {
+        return value != null ? value : 0;
     }
 }

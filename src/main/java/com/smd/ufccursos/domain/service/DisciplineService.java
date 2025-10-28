@@ -41,7 +41,7 @@ public class DisciplineService implements DisciplineServicePort {
 
     @Override
     public Discipline save(DisciplineTO disciplineTO) {
-        Course course = courseServicePort.findById(disciplineTO.getCourseId());
+        Course course = courseServicePort.findEntityById(disciplineTO.getCourseId());
 
         Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?
                 disciplineTO.getPrerequisiteIds().stream()
@@ -76,7 +76,7 @@ public class DisciplineService implements DisciplineServicePort {
         discipline.setDescription(disciplineTO.getDescription());
         discipline.setSemester(disciplineTO.getSemester());
 
-        Course course = courseServicePort.findById(disciplineTO.getCourseId());
+        Course course = courseServicePort.findEntityById(disciplineTO.getCourseId());
         discipline.setCourse(course);
 
         Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?

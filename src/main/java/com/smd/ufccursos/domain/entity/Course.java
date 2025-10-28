@@ -15,7 +15,6 @@ import java.util.List;
 @Builder
 public class Course extends BaseEntity{
 
-    @NotBlank
     private String name;
 
     private String department;

@@ -10,11 +10,15 @@ import com.smd.ufccursos.domain.DTO.response.ElectiveRequirementDTOResponse;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.CourseRequirements;
 import com.smd.ufccursos.domain.entity.SemesterElectiveRequirement;
+import com.smd.ufccursos.domain.exceptions.BusinessRuleException;
 import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
+import com.smd.ufccursos.domain.mapper.CourseMapper;
+import com.smd.ufccursos.domain.mapper.CourseRequirementsMapper;
 import com.smd.ufccursos.domain.ports.repositoryPort.CourseRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,55 +33,60 @@ public class CourseService implements CourseServicePort {
 
 
     @Override
-    public PageTO<Course> findAll(PaginationTO paginationTO) {
-        return courseRepositoryPort.findAll(paginationTO);
-    }
+    public PageTO<CourseDTOResponse> findAll(PaginationTO paginationTO) {
+        PageTO<Course> coursePage = courseRepositoryPort.findAll(paginationTO);
+
+        List<CourseDTOResponse> courseDTOs = coursePage.getContent().stream()
+                .map(CourseMapper::toResponse)
+                .toList();
+
+        return PageTO.of(coursePage, courseDTOs);    }
 
     @Override
-    public Course findById(UUID id) {
+    public CourseDTOResponse findById(UUID id) {
         Optional<Course> course = courseRepositoryPort.findById(id);
         if (course.isEmpty()) {
             throw new ObjectNotFoundException("Course not found ");
         }
-        return course.get();
+        return  CourseMapper.toResponse(course.get());
+    }
+
+    @Override
+    public Course findEntityById(UUID id) {
+        return courseRepositoryPort.findById(id).orElseThrow(() -> new ObjectNotFoundException("Course not found "));
     }
 
     @Override
     public CourseDTOResponse save(CourseDTORequest courseDTORequest) {
-        CourseRequirements requirements = mapToCourseRequirements(courseDTORequest.getRequirements());
-
-        Course course = Course.builder()
-                .name(courseDTORequest.getName())
-                .department(courseDTORequest.getDepartment())
-                .requirements(requirements)
-                .build();
-
-        if (requirements.getSemesterElectiveRequirementList() != null) {
-            requirements.getSemesterElectiveRequirementList()
-                    .forEach(e -> e.setCourseRequirements(requirements));
-        }
-
+        Course course = CourseMapper.toEntity(courseDTORequest);
+        validateDuplicateSemesters(course.getRequirements());
         Course savedCourse = courseRepositoryPort.save(course);
-        return mapToDTO(savedCourse);
+        return CourseMapper.toResponse(savedCourse);
     }
 
     @Override
-    public Course update(UUID id, CourseDTORequest courseDTORequest) {
-        Course courseToUpdate = findById(id);
-        courseToUpdate.setName(courseDTORequest.getName());
-        courseToUpdate.setDepartment(courseDTORequest.getDepartment());
+    public CourseDTOResponse update(UUID id, CourseDTORequest courseDTORequest) {
+        Course existingCourse = findEntityById(id);
+
+        existingCourse.setName(courseDTORequest.getName());
+        existingCourse.setDepartment(courseDTORequest.getDepartment());
 
         if (courseDTORequest.getRequirements() != null) {
-            CourseRequirements newRequirements = mapToCourseRequirements(courseDTORequest.getRequirements());
-            courseToUpdate.setRequirements(newRequirements);
+            CourseRequirements newRequirements =
+                    CourseRequirementsMapper.toEntity(courseDTORequest.getRequirements());
+
+            validateDuplicateSemesters(newRequirements);
 
             if (newRequirements.getSemesterElectiveRequirementList() != null) {
                 newRequirements.getSemesterElectiveRequirementList()
                         .forEach(e -> e.setCourseRequirements(newRequirements));
             }
+
+            existingCourse.setRequirements(newRequirements);
         }
 
-        return courseRepositoryPort.save(courseToUpdate);
+        Course updatedCourse = courseRepositoryPort.save(existingCourse);
+        return CourseMapper.toResponse(updatedCourse);
     }
 
     @Override
@@ -85,67 +94,23 @@ public class CourseService implements CourseServicePort {
         courseRepositoryPort.deleteById(id);
     }
 
-    // 🔧 Método auxiliar para montar CourseRequirements
-    private CourseRequirements mapToCourseRequirements(CourseRequirementsDTORequest dto) {
-        if (dto == null) return null;
+    private void validateDuplicateSemesters(CourseRequirements requirements) {
+        if (requirements == null || requirements.getSemesterElectiveRequirementList() == null) return;
 
-        CourseRequirements requirements = CourseRequirements.builder()
-                .requiredMandatoryHours(dto.getRequiredMandatoryHours())
-                .requiredOptionalHours(dto.getRequiredOptionalHours())
-                .requiredComplementaryHours(dto.getRequiredComplementaryHours())
-                .tccHours(dto.getTccHours())
-                .internshipHours(dto.getInternshipHours())
-                .extensionHours(dto.getExtensionHours())
-                .build();
+        List<SemesterElectiveRequirement> electives = requirements.getSemesterElectiveRequirementList();
 
-        // 🔁 Mapeia eletivas por semestre, se houver
-        if (dto.getElectiveRequirements() != null && !dto.getElectiveRequirements().isEmpty()) {
-            List<SemesterElectiveRequirement> electiveList = dto.getElectiveRequirements().stream()
-                    .map(er -> {
-                        SemesterElectiveRequirement entity = new SemesterElectiveRequirement();
-                        entity.setSemester(er.getSemester());
-                        entity.setMinEletivasRequired(er.getMinRequired());
-                        return entity;
-                    })
-                    .collect(Collectors.toList());
+        var duplicates = electives.stream()
+                .collect(Collectors.groupingBy(SemesterElectiveRequirement::getSemester, Collectors.counting()))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .toList();
 
-            requirements.setSemesterElectiveRequirementList(electiveList);
+        if (!duplicates.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Semestres duplicados encontrados nos requisitos eletivos: " + duplicates
+            );
         }
-
-        return requirements;
     }
 
-    // 🔧 Mapeamento para DTO de resposta
-    private CourseDTOResponse mapToDTO(Course course) {
-        CourseDTOResponse dto = new CourseDTOResponse();
-        dto.setId(course.getId());
-        dto.setName(course.getName());
-        dto.setDepartment(course.getDepartment());
-
-        if (course.getRequirements() != null) {
-            CourseRequirementsDTOResponse reqDto = new CourseRequirementsDTOResponse();
-            reqDto.setRequiredMandatoryHours(course.getRequirements().getRequiredMandatoryHours());
-            reqDto.setRequiredOptionalHours(course.getRequirements().getRequiredOptionalHours());
-            reqDto.setRequiredComplementaryHours(course.getRequirements().getRequiredComplementaryHours());
-            reqDto.setTccHours(course.getRequirements().getTccHours());
-            reqDto.setInternshipHours(course.getRequirements().getInternshipHours());
-            reqDto.setExtensionHours(course.getRequirements().getExtensionHours());
-
-            if (course.getRequirements().getSemesterElectiveRequirementList() != null) {
-                List<ElectiveRequirementDTOResponse> electives = course.getRequirements()
-                        .getSemesterElectiveRequirementList().stream()
-                        .map(e -> {
-                            ElectiveRequirementDTOResponse erDto = new ElectiveRequirementDTOResponse();
-                            erDto.setSemester(e.getSemester());
-                            erDto.setMinEletivasRequired(e.getMinEletivasRequired());
-                            return erDto;
-                        }).collect(Collectors.toList());
-                reqDto.setSemesterElectiveRequirementList(electives);
-            }
-
-            dto.setRequirements(reqDto);
-        }
-
-        return dto;
-    }
 }

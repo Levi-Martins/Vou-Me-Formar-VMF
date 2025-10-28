@@ -3,6 +3,7 @@ package com.smd.ufccursos.domain.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.util.List;
@@ -26,7 +27,6 @@ public class CourseRequirements extends BaseEntity {
     @OneToMany(mappedBy = "courseRequirements", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SemesterElectiveRequirement> semesterElectiveRequirementList;
 
-    // Soma total de horas exigidas para formar
     public Integer getTotalRequiredHours() {
         return safe(requiredMandatoryHours)
                 + safe(requiredOptionalHours)

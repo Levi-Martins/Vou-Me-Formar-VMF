@@ -28,7 +28,7 @@ public class CourseController {
 
     @Operation(summary = "Página com 10 cursos")
     @GetMapping
-    public ResponseEntity<PageTO<Course>> findAll(
+    public ResponseEntity<PageTO<CourseDTOResponse>> findAll(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String department,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -44,7 +44,7 @@ public class CourseController {
 
     @Operation(summary = "Chamar curso")
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Course> findById(@PathVariable UUID id){
+    public ResponseEntity<CourseDTOResponse> findById(@PathVariable UUID id){
         return ResponseEntity.ok().body(courseServicePort.findById(id));
     }
 
@@ -57,7 +57,7 @@ public class CourseController {
 
     @Operation(summary = "Editar curso")
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Course> update(@PathVariable UUID id, @RequestBody @Valid CourseDTORequest courseDTORequest) {
+    public ResponseEntity<CourseDTOResponse> update(@PathVariable UUID id, @RequestBody @Valid CourseDTORequest courseDTORequest) {
         return ResponseEntity.ok().body(courseServicePort.update(id, courseDTORequest));
     }
 

@@ -6,14 +6,16 @@ import com.smd.ufccursos.domain.DTO.request.CourseDTORequest;
 import com.smd.ufccursos.domain.DTO.response.CourseDTOResponse;
 import com.smd.ufccursos.domain.entity.Course;
 
+import java.util.Optional;
 import java.util.UUID;
 
 ;
 
 public interface CourseServicePort {
-    PageTO<Course> findAll(PaginationTO paginationTO);
-    Course findById(UUID id);
+    PageTO<CourseDTOResponse> findAll(PaginationTO paginationTO);
+    CourseDTOResponse findById(UUID id);
+    Course findEntityById(UUID id);
     CourseDTOResponse save(CourseDTORequest courseDTORequest);
-    Course update(UUID id, CourseDTORequest courseDTORequest);
+    CourseDTOResponse update(UUID id, CourseDTORequest courseDTORequest);
     void deleteById(UUID id);
 }

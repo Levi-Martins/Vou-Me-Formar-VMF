@@ -42,7 +42,7 @@ public class StudentService implements StudentServicePort {
 
     @Override
     public Student save(StudentTO studentTO) {
-        Course course = courseServicePort.findById(studentTO.getCourseId());
+        Course course = courseServicePort.findEntityById(studentTO.getCourseId());
 
         Student student = Student.builder()
                 .name(studentTO.getName())
@@ -79,7 +79,7 @@ public class StudentService implements StudentServicePort {
         studentToUpdate.setRegistration(studentTO.getRegistration());
 
         if (studentTO.getCourseId() != null) {
-            Course course = courseServicePort.findById(studentTO.getCourseId());
+            Course course = courseServicePort.findEntityById(studentTO.getCourseId());
             studentToUpdate.setCourse(course);
         }
 

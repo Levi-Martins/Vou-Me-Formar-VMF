@@ -7,20 +7,30 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_NULL) // Ótimo, mantenha isso!
 public class ErroResponse {
-    private Integer status;
-    private final LocalDateTime timestamp = LocalDateTime.now();
-    private String message;
-    private List<String> erroMessages;
 
-    public  ErroResponse(Integer status, String message) {
+    private final LocalDateTime timestamp = LocalDateTime.now();
+    private Integer status;
+    private String erro; // Um título geral para o erro (ex: "Validação falhou")
+    private String mensagem; // Para erros simples (ex: "Objeto não encontrado")
+    private List<DetalheErroValidacao> detalhes; // << NOSSA MUDANÇA PRINCIPAL
+
+    /**
+     * Construtor para erros simples (a maioria dos seus handlers)
+     */
+    public ErroResponse(Integer status, String erro, String mensagem) {
         this.status = status;
-        this.message = message;
+        this.erro = erro;
+        this.mensagem = mensagem;
     }
 
-    public ErroResponse(Integer status, List<String> erroMessages) {
+    /**
+     * Construtor para erros de validação (com a lista de detalhes)
+     */
+    public ErroResponse(Integer status, String erro, List<DetalheErroValidacao> detalhes) {
         this.status = status;
-        this.erroMessages = erroMessages;
+        this.erro = erro;
+        this.detalhes = detalhes;
     }
 }

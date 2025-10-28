@@ -1,5 +1,6 @@
 package com.smd.ufccursos.application.exceptions;
 
+import com.smd.ufccursos.domain.exceptions.BusinessRuleException;
 import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -15,8 +16,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,91 +28,110 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErroResponse> handleValidationException(MethodArgumentNotValidException ex) {
         var status = HttpStatus.BAD_REQUEST;
-        var errorMessages = new ArrayList<String>();
-        var fieldErrors = ex.getBindingResult().getFieldErrors();
         logger.warn("Validation failed: ", ex);
-        fieldErrors.forEach(e -> {
-            var msgError = String.format("Field '%s' %s. Provided value: %s", e.getField(), e.getDefaultMessage(), e.getRejectedValue());
-            errorMessages.add(msgError);
-        });
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessages));
+
+        List<DetalheErroValidacao> detalhesDosErros = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> new DetalheErroValidacao(
+                        fieldError.getField(),
+                        fieldError.getDefaultMessage(),
+                        fieldError.getRejectedValue()
+                ))
+                .collect(Collectors.toList());
+
+        String erroTitulo = "Um ou mais campos estão inválidos";
+        var erroResponse = new ErroResponse(status.value(), erroTitulo, detalhesDosErros);
+
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ResponseEntity<ErroResponse> handleObjectNotFoundException(ObjectNotFoundException ex) {
         var status = HttpStatus.NOT_FOUND;
         logger.error("ObjectNotFoundException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), ex.getMessage()));
+        var erroResponse = new ErroResponse(status.value(), "Objeto não encontrado", ex.getMessage());
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
-    //TODO: CONFERIR
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErroResponse> handleObjectNotFoundException(BadCredentialsException ex) {
         var status = HttpStatus.FORBIDDEN;
         logger.error("BadCredentialsException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), ex.getMessage()));
+        var erroResponse = new ErroResponse(status.value(), "Credenciais inválidas", ex.getMessage());
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResponse> handleGenericException(Exception ex) {
         var status = HttpStatus.INTERNAL_SERVER_ERROR;
         logger.error("Unexpected error: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), "An unexpected error occurred. Please try again later."));
+        String mensagem = "Ocorreu um erro inesperado. Tente novamente mais tarde.";
+        var erroResponse = new ErroResponse(status.value(), "Erro Interno", mensagem);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErroResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         var status = HttpStatus.BAD_REQUEST;
         logger.error("HttpMessageNotReadableException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), "Invalid request body format."));
+        String mensagem = "Formato de requisição inválido ou ilegível.";
+        var erroResponse = new ErroResponse(status.value(), "Requisição Inválida", mensagem);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErroResponse> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
         var status = HttpStatus.METHOD_NOT_ALLOWED;
-        String errorMessage = "Method " + ex.getMethod() + " not supported for this endpoint.";
+        String errorMessage = "Método " + ex.getMethod() + " não suportado para este endpoint.";
         logger.error("HttpRequestMethodNotSupportedException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessage));
+        var erroResponse = new ErroResponse(status.value(), "Método não permitido", errorMessage);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErroResponse> handleConstraintViolationException(ConstraintViolationException ex) {
         var status = HttpStatus.BAD_REQUEST;
-        List<String> errorMessages = ex.getConstraintViolations().stream()
-                .map(violation -> violation.getPropertyPath() + " " + violation.getMessage())
-                .toList();
         logger.error("ConstraintViolationException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessages));
+
+        List<DetalheErroValidacao> detalhesDosErros = ex.getConstraintViolations().stream()
+                .map(violation -> new DetalheErroValidacao(
+                        violation.getPropertyPath().toString(),
+                        violation.getMessage(),
+                        violation.getInvalidValue()
+                ))
+                .collect(Collectors.toList());
+
+        String erroTitulo = "Violação de constraint";
+        var erroResponse = new ErroResponse(status.value(), erroTitulo, detalhesDosErros);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErroResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         var status = HttpStatus.CONFLICT;
-        String errorMessage = "Data integrity violation: " + ex.getMostSpecificCause().getMessage();
+        String errorMessage = "Violação de integridade de dados: " + ex.getMostSpecificCause().getMessage();
         logger.error("DataIntegrityViolationException: ", ex);
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessage));
+        var erroResponse = new ErroResponse(status.value(), "Conflito de Dados", errorMessage);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
     @ExceptionHandler(TransactionSystemException.class)
     public ResponseEntity<ErroResponse> handleTransactionSystemException(TransactionSystemException ex) {
         var status = HttpStatus.BAD_REQUEST;
-        String errorMessage = "Transaction error occurred.";
-
+        String errorMessage = "Erro na transação.";
         logger.error("TransactionSystemException: ", ex);
-
-        if (ex.getRootCause() instanceof ConstraintViolationException) {
-            ConstraintViolationException constraintViolationException = (ConstraintViolationException) ex.getRootCause();
-            List<String> errorMessages = constraintViolationException.getConstraintViolations().stream()
-                    .map(violation -> violation.getPropertyPath() + " " + violation.getMessage())
-                    .toList();
-            return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessages));
-        }
-
-        if (ex.getRootCause() instanceof DataIntegrityViolationException) {
-            errorMessage = "Data integrity violation error.";
-        }
-
-        return ResponseEntity.status(status).body(new ErroResponse(status.value(), errorMessage));
+        var erroResponse = new ErroResponse(status.value(), "Erro de Transação", errorMessage);
+        return ResponseEntity.status(status).body(erroResponse);
     }
 
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErroResponse> handleBusinessRuleException(BusinessRuleException ex) {
+        var status = HttpStatus.BAD_REQUEST;
+        logger.warn("BusinessRuleException: ", ex);
+        var erroResponse = new ErroResponse(status.value(), "Regra de Negócio Violada", ex.getMessage());
+        return ResponseEntity.status(status).body(erroResponse);
+    }
 }
+
+

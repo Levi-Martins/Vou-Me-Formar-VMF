@@ -5,8 +5,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class DetalheErroValidacao {
-    private String campo;
-    private String mensagem;
-    private Object valorRejeitado;
+public class ValidationErrorDetail {
+    private String field;
+    private String message;
+    private Object Rejectedvalue;
 }

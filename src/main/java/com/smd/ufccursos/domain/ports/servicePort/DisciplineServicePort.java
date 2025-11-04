@@ -1,19 +1,19 @@
 package com.smd.ufccursos.domain.ports.servicePort;
 
-import com.smd.ufccursos.domain.DTO.request.DisciplineTO;
+import com.smd.ufccursos.domain.DTO.request.DisciplineDTORequest;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
-import com.smd.ufccursos.domain.DTO.response.DisciplineResponseTO;
+import com.smd.ufccursos.domain.DTO.response.DisciplineResponseDTO;
 import com.smd.ufccursos.domain.entity.Discipline;
 
 import java.util.UUID;
 
 public interface DisciplineServicePort {
 
-    PageTO<DisciplineResponseTO> findAll(PaginationTO paginationTO);
-    Discipline findById(UUID id);
-    Discipline save(DisciplineTO disciplineTO);
-    Discipline update(UUID id, DisciplineTO disciplineTO);
+    PageTO<DisciplineResponseDTO> findAll(PaginationTO paginationTO);
+    DisciplineResponseDTO findById(UUID id);
+    DisciplineResponseDTO save(DisciplineDTORequest disciplineDTORequest);
+    DisciplineResponseDTO update(UUID id, DisciplineDTORequest disciplineDTORequest);
     void deleteById(UUID id);
     Discipline findByDisciplineCode(String code);
 }

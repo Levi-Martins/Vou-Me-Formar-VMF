@@ -40,7 +40,8 @@ public class CourseService implements CourseServicePort {
                 .map(CourseMapper::toResponse)
                 .toList();
 
-        return PageTO.of(coursePage, courseDTOs);    }
+        return PageTO.of(coursePage, courseDTOs);
+    }
 
     @Override
     public CourseDTOResponse findById(UUID id) {
@@ -48,7 +49,7 @@ public class CourseService implements CourseServicePort {
         if (course.isEmpty()) {
             throw new ObjectNotFoundException("Course not found ");
         }
-        return  CourseMapper.toResponse(course.get());
+        return CourseMapper.toResponse(course.get());
     }
 
     @Override

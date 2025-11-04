@@ -5,6 +5,8 @@ import com.smd.ufccursos.domain.ports.servicePort.*;
 import com.smd.ufccursos.domain.service.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.validation.Validator;
+
 
 @Configuration
 public class BeanConfiguration {
@@ -34,17 +36,17 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public AuthorizationService authorizationService(UserRepositoryPort userRepositoryPort){
+    public AuthorizationService authorizationService(UserRepositoryPort userRepositoryPort) {
         return new AuthorizationService(userRepositoryPort);
     }
 
     @Bean
-    public TokenService tokenService(){
+    public TokenService tokenService() {
         return new TokenService();
     }
 
     @Bean
-    public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort){
-        return new CSVImportService(disciplineServicePort);
+    public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort, Validator validator) {
+        return new CSVImportService(disciplineServicePort, validator);
     }
 }

@@ -15,17 +15,13 @@ import java.util.Set;
 @Builder
 public class Discipline extends BaseEntity{
 
-    @NotBlank
     private String name;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     private TypeOfDiscipline typeOfDiscipline;
 
-    @NotNull
     private Integer workload;
 
-    @NotNull
     private Integer classCredits;
 
     private String description;

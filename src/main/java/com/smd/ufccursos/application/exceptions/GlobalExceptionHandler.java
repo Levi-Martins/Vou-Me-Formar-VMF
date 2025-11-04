@@ -1,6 +1,7 @@
 package com.smd.ufccursos.application.exceptions;
 
 import com.smd.ufccursos.domain.exceptions.BusinessRuleException;
+import com.smd.ufccursos.domain.exceptions.CSVImportValidationException;
 import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -30,10 +31,10 @@ public class GlobalExceptionHandler {
         var status = HttpStatus.BAD_REQUEST;
         logger.warn("Validation failed: ", ex);
 
-        List<DetalheErroValidacao> detalhesDosErros = ex.getBindingResult()
+        List<ValidationErrorDetail> detalhesDosErros = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(fieldError -> new DetalheErroValidacao(
+                .map(fieldError -> new ValidationErrorDetail(
                         fieldError.getField(),
                         fieldError.getDefaultMessage(),
                         fieldError.getRejectedValue()
@@ -94,8 +95,8 @@ public class GlobalExceptionHandler {
         var status = HttpStatus.BAD_REQUEST;
         logger.error("ConstraintViolationException: ", ex);
 
-        List<DetalheErroValidacao> detalhesDosErros = ex.getConstraintViolations().stream()
-                .map(violation -> new DetalheErroValidacao(
+        List<ValidationErrorDetail> detalhesDosErros = ex.getConstraintViolations().stream()
+                .map(violation -> new ValidationErrorDetail(
                         violation.getPropertyPath().toString(),
                         violation.getMessage(),
                         violation.getInvalidValue()
@@ -119,9 +120,29 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransactionSystemException.class)
     public ResponseEntity<ErroResponse> handleTransactionSystemException(TransactionSystemException ex) {
         var status = HttpStatus.BAD_REQUEST;
-        String errorMessage = "Erro na transação.";
-        logger.error("TransactionSystemException: ", ex);
-        var erroResponse = new ErroResponse(status.value(), "Erro de Transação", errorMessage);
+        logger.error("TransactionSystemException capturada: ", ex);
+
+        Throwable rootCause = ex.getRootCause();
+
+        if (rootCause instanceof ConstraintViolationException constraintEx) {
+            List<ValidationErrorDetail> detalhesDosErros = constraintEx.getConstraintViolations().stream()
+                    .map(violation -> new ValidationErrorDetail(
+                            violation.getPropertyPath().toString(),
+                            violation.getMessage(),
+                            violation.getInvalidValue()
+                    ))
+                    .collect(Collectors.toList());
+
+            String erroTitulo = "Erro de validação nos dados enviados";
+            var erroResponse = new ErroResponse(status.value(), erroTitulo, detalhesDosErros);
+            return ResponseEntity.status(status).body(erroResponse);
+        }
+
+        var erroResponse = new ErroResponse(
+                status.value(),
+                "Erro de Transação",
+                "Ocorreu um erro ao processar a transação. Verifique os dados e tente novamente."
+        );
         return ResponseEntity.status(status).body(erroResponse);
     }
 
@@ -130,6 +151,20 @@ public class GlobalExceptionHandler {
         var status = HttpStatus.BAD_REQUEST;
         logger.warn("BusinessRuleException: ", ex);
         var erroResponse = new ErroResponse(status.value(), "Regra de Negócio Violada", ex.getMessage());
+        return ResponseEntity.status(status).body(erroResponse);
+    }
+
+    @ExceptionHandler(CSVImportValidationException.class)
+    public ResponseEntity<ErroResponse> handleCSVImportValidationException(CSVImportValidationException ex) {
+        var status = HttpStatus.BAD_REQUEST;
+        logger.warn("CSVImportValidationException: ", ex);
+
+        var erroResponse = new ErroResponse(
+                status.value(),
+                "Erro de validação na planilha importada",
+                ex.getFieldErrors()
+        );
+
         return ResponseEntity.status(status).body(erroResponse);
     }
 }

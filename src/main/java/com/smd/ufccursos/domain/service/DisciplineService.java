@@ -1,11 +1,13 @@
 package com.smd.ufccursos.domain.service;
 
-import com.smd.ufccursos.domain.DTO.request.DisciplineTO;
+import com.smd.ufccursos.domain.DTO.request.DisciplineDTORequest;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
-import com.smd.ufccursos.domain.DTO.response.DisciplineResponseTO;
+import com.smd.ufccursos.domain.DTO.response.DisciplineResponseDTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Discipline;
+import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
+import com.smd.ufccursos.domain.mapper.DisciplineMapper;
 import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
 import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
@@ -23,71 +25,73 @@ public class DisciplineService implements DisciplineServicePort {
         this.courseServicePort = courseServicePort;
     }
 
-    public PageTO<DisciplineResponseTO> findAll(PaginationTO paginationTO) {
+    public PageTO<DisciplineResponseDTO> findAll(PaginationTO paginationTO) {
         PageTO<Discipline> disciplines = disciplineRepositoryPort.findAll(paginationTO);
-        List<DisciplineResponseTO> response = disciplines.getContent().stream()
-                .map(DisciplineResponseTO::new)
+        List<DisciplineResponseDTO> response = disciplines.getContent().stream()
+                .map(DisciplineResponseDTO::new)
                 .collect(Collectors.toList());
         return PageTO.of(disciplines, response);
     }
 
     @Override
-    public Discipline findById(UUID id) {
+    public DisciplineResponseDTO findById(UUID id) {
         Optional<Discipline> discipline = disciplineRepositoryPort.findById(id);
         if (discipline.isEmpty()) {
-            throw new RuntimeException("Discipline not found");
+            throw new ObjectNotFoundException("Discipline not found");
         }
-        return discipline.get();    }
+        return DisciplineMapper.toResponse(discipline.get());
+    }
+
+    public Discipline findByIdEntity(UUID id) {
+        Optional<Discipline> discipline = disciplineRepositoryPort.findById(id);
+        if (discipline.isEmpty()) {
+            throw new ObjectNotFoundException("Discipline not found");
+        }
+        return discipline.get();
+    }
 
     @Override
-    public Discipline save(DisciplineTO disciplineTO) {
-        Course course = courseServicePort.findEntityById(disciplineTO.getCourseId());
+    public DisciplineResponseDTO save(DisciplineDTORequest disciplineDTORequest) {
+        Discipline discipline = DisciplineMapper.toEntity(disciplineDTORequest);
 
-        Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?
-                disciplineTO.getPrerequisiteIds().stream()
-                        .map(this::findById)
-                        .collect(Collectors.toSet()) :
-                Collections.emptySet();
+        Course course = courseServicePort.findEntityById(disciplineDTORequest.getCourseId());
+        discipline.setCourse(course);
 
-        Discipline discipline = Discipline.builder()
-                .name(disciplineTO.getName())
-                .typeOfDiscipline(disciplineTO.getTypeOfDiscipline())
-                .workload(disciplineTO.getWorkload())
-                .classCredits(disciplineTO.getClassCredits())
-                .description(disciplineTO.getDescription())
-                .semester(disciplineTO.getSemester())
-                .course(course)
-                .prerequisites(prerequisites)
-                .disciplineCode(disciplineTO.getDisciplineCode())
-                .build();
+        Set<Discipline> prerequisites = (disciplineDTORequest.getPrerequisiteIds() != null)
+                ? disciplineDTORequest.getPrerequisiteIds().stream()
+                .map(this::findByIdEntity)
+                .collect(Collectors.toSet())
+                : Collections.emptySet();
+        discipline.setPrerequisites(prerequisites);
 
-        return disciplineRepositoryPort.save(discipline);
+        Discipline saved = disciplineRepositoryPort.save(discipline);
+        return DisciplineMapper.toResponse(saved);
     }
 
 
     @Override
-    public Discipline update(UUID id, DisciplineTO disciplineTO) {
-        Discipline discipline = findById(id);
+    public DisciplineResponseDTO update(UUID id, DisciplineDTORequest disciplineDTORequest) {
+        Discipline discipline = findByIdEntity(id);
 
-        discipline.setName(disciplineTO.getName());
-        discipline.setTypeOfDiscipline(disciplineTO.getTypeOfDiscipline());
-        discipline.setWorkload(disciplineTO.getWorkload());
-        discipline.setClassCredits(disciplineTO.getClassCredits());
-        discipline.setDescription(disciplineTO.getDescription());
-        discipline.setSemester(disciplineTO.getSemester());
+        discipline.setName(disciplineDTORequest.getName());
+        discipline.setTypeOfDiscipline(disciplineDTORequest.getTypeOfDiscipline());
+        discipline.setWorkload(disciplineDTORequest.getWorkload());
+        discipline.setClassCredits(disciplineDTORequest.getClassCredits());
+        discipline.setDescription(disciplineDTORequest.getDescription());
+        discipline.setSemester(disciplineDTORequest.getSemester());
 
-        Course course = courseServicePort.findEntityById(disciplineTO.getCourseId());
+        Course course = courseServicePort.findEntityById(disciplineDTORequest.getCourseId());
         discipline.setCourse(course);
 
-        Set<Discipline> prerequisites = (disciplineTO.getPrerequisiteIds() != null) ?
-                disciplineTO.getPrerequisiteIds().stream()
-                        .map(this::findById)
+        Set<Discipline> prerequisites = (disciplineDTORequest.getPrerequisiteIds() != null) ?
+                disciplineDTORequest.getPrerequisiteIds().stream()
+                        .map(this::findByIdEntity)
                         .collect(Collectors.toSet()) :
                 Collections.emptySet();
 
         discipline.setPrerequisites(prerequisites);
-
-        return disciplineRepositoryPort.save(discipline);
+        Discipline updatedDiscipline = disciplineRepositoryPort.save(discipline);
+        return DisciplineMapper.toResponse(updatedDiscipline);
     }
 
 

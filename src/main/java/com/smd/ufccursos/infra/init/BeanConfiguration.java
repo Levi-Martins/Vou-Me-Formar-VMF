@@ -49,4 +49,9 @@ public class BeanConfiguration {
     public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort, Validator validator) {
         return new CSVImportService(disciplineServicePort, validator);
     }
+
+    @Bean
+    public GraduationCheckService graduationCheckService(CourseRepositoryPort courseRepositoryPort, DisciplineRepositoryPort disciplineRepositoryPort) {
+        return new GraduationCheckService(courseRepositoryPort, disciplineRepositoryPort);
+    }
 }

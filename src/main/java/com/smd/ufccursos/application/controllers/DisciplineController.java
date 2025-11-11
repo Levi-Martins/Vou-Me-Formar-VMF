@@ -4,7 +4,6 @@ import com.smd.ufccursos.domain.DTO.request.DisciplineDTORequest;
 import com.smd.ufccursos.domain.DTO.PageTO;
 import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.DTO.response.DisciplineResponseDTO;
-import com.smd.ufccursos.domain.entity.Discipline;
 import com.smd.ufccursos.domain.entity.TypeOfDiscipline;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
 import io.swagger.v3.oas.annotations.Operation;

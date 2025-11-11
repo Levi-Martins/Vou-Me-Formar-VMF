@@ -15,6 +15,6 @@ public class GraduationCheckRequest {
     private Set<UUID> completedDisciplineIds;
     private Integer completedComplementaryHours;
     private Boolean tccCompleted;
-    private Boolean internshipCompleted;
-    private Boolean extensionCompleted;
+    private Integer internshipCompleted;
+    private Integer extensionCompleted;
 }

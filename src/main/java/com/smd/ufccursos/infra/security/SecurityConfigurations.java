@@ -37,6 +37,9 @@ public class SecurityConfigurations {
                         .requestMatchers(HttpMethod.POST, "/course").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/course").permitAll()
                         .requestMatchers(HttpMethod.GET, "/discipline").permitAll()
+                        .requestMatchers("/graduation-check").permitAll()
+                        .requestMatchers("/graduation-check/upload-pdf").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

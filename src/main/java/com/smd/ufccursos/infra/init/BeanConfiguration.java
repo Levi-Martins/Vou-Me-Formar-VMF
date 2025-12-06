@@ -1,8 +1,10 @@
 package com.smd.ufccursos.infra.init;
 
+import com.smd.ufccursos.domain.mapper.PdfGraduationCheckMapper;
 import com.smd.ufccursos.domain.ports.repositoryPort.*;
 import com.smd.ufccursos.domain.ports.servicePort.*;
 import com.smd.ufccursos.domain.service.*;
+import com.smd.ufccursos.infra.client.PythonPdfClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import jakarta.validation.Validator;
@@ -51,7 +53,17 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public GraduationCheckService graduationCheckService(CourseRepositoryPort courseRepositoryPort, DisciplineRepositoryPort disciplineRepositoryPort) {
+    public GraduationCheckService graduationCheckService(
+            CourseRepositoryPort courseRepositoryPort,
+            DisciplineRepositoryPort disciplineRepositoryPort) {
         return new GraduationCheckService(courseRepositoryPort, disciplineRepositoryPort);
+    }
+
+    @Bean
+    public PdfGraduationOrchestratorService pdfGraduationOrchestratorService(
+            PythonPdfClient pythonClient,
+            PdfGraduationCheckMapper mapper,
+            GraduationCheckServicePort graduationCheckService) {
+        return new PdfGraduationOrchestratorService(pythonClient, mapper, graduationCheckService);
     }
 }

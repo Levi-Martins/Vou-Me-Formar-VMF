@@ -62,6 +62,18 @@ public class GraduationCheckService implements GraduationCheckServicePort {
                         || d.getTypeOfDiscipline() == TypeOfDiscipline.ELETIVA)
                 .toList();
 
+        System.out.println("--- INICIO DEBUG SERVICE ---");
+        System.out.println("Total de Optativas/Eletivas cadastradas no curso: " + optionalAndEletivas.size());
+
+        // Logar quais estão sendo somadas
+        int debugSoma = 0;
+        for (Discipline d : optionalAndEletivas) {
+            if (completedIds.contains(d.getId())) {
+                System.out.println("Somando Optativa: " + d.getDisciplineCode() + " (" + d.getName() + ") - " + d.getWorkload() + "h");
+                debugSoma += d.getWorkload();
+            }
+        }
+        System.out.println("Soma Total Calculada no Loop Debug: " + debugSoma);
         int completedOptionalHours = optionalAndEletivas.stream()
                 .filter(d -> completedIds.contains(d.getId()))
                 .mapToInt(Discipline::getWorkload)

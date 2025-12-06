@@ -79,6 +79,7 @@ public class DisciplineService implements DisciplineServicePort {
         discipline.setClassCredits(disciplineDTORequest.getClassCredits());
         discipline.setDescription(disciplineDTORequest.getDescription());
         discipline.setSemester(disciplineDTORequest.getSemester());
+        discipline.setDisciplineCode(disciplineDTORequest.getDisciplineCode());
 
         Course course = courseServicePort.findEntityById(disciplineDTORequest.getCourseId());
         discipline.setCourse(course);

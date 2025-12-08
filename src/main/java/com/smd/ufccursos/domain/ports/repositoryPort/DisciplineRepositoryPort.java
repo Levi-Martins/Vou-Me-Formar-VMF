@@ -12,4 +12,6 @@ public interface DisciplineRepositoryPort extends BaseRepositoryPort<Discipline>
     Optional<Discipline> findByDisciplineCode(String code);
     List<Discipline> findByCourseId(UUID courseId);
     List<Discipline> findByCourseIdAndDisciplineCodeIn(UUID courseId, Set<String> approvedCodes);
+    List<Discipline> findByDisiplineCodeIn(Set<String> disiplineCodes);
+    List<Discipline> findAllById(List<UUID> ids);
 }

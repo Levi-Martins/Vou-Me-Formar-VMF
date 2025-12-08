@@ -13,4 +13,6 @@ public interface SpringDataDisciplineRepository extends JpaRepository<Discipline
     Optional<Discipline> findByDisciplineCode(String code);
     List<Discipline> findByCourseId(UUID courseId);
     List<Discipline> findByCourse_IdAndDisciplineCodeIn(UUID courseId, Set<String> disciplineCodes);
+    List<Discipline> findByDisciplineCodeIn(Set<String> disciplineCodes);
+    List<Discipline> findAllByIdIn(List<UUID> ids);
 }

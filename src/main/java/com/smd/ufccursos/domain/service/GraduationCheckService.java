@@ -34,6 +34,23 @@ public class GraduationCheckService implements GraduationCheckServicePort {
 
         List<Discipline> allDisciplines = disciplineRepositoryPort.findByCourseId(course.getId());
 
+        // Pega todos os IDs que pertencem ao curso
+        Set<UUID> courseDisciplineIds = allDisciplines.stream()
+                .map(Discipline::getId)
+                .collect(Collectors.toSet());
+
+        // Filtra IDs que estão no request (completos) mas NÃO estão na lista do curso
+        List<UUID> extraIds = completedIds.stream()
+                .filter(id -> !courseDisciplineIds.contains(id))
+                .toList();
+
+        // Busca os objetos dessas disciplinas extras no banco
+        List<Discipline> extraDisciplines = new ArrayList<>();
+        if (!extraIds.isEmpty()) {
+            // OBS: Certifique-se que seu DisciplineRepositoryPort tem o método findAllById
+            extraDisciplines = disciplineRepositoryPort.findAllById(extraIds);
+        }
+
         // --- Disciplinas obrigatórias ---
         List<Discipline> mandatory = allDisciplines.stream()
                 .filter(d -> d.getTypeOfDiscipline() == TypeOfDiscipline.OBRIGATORIA)
@@ -62,22 +79,22 @@ public class GraduationCheckService implements GraduationCheckServicePort {
                         || d.getTypeOfDiscipline() == TypeOfDiscipline.ELETIVA)
                 .toList();
 
-        System.out.println("--- INICIO DEBUG SERVICE ---");
-        System.out.println("Total de Optativas/Eletivas cadastradas no curso: " + optionalAndEletivas.size());
-
-        // Logar quais estão sendo somadas
-        int debugSoma = 0;
-        for (Discipline d : optionalAndEletivas) {
-            if (completedIds.contains(d.getId())) {
-                System.out.println("Somando Optativa: " + d.getDisciplineCode() + " (" + d.getName() + ") - " + d.getWorkload() + "h");
-                debugSoma += d.getWorkload();
-            }
-        }
-        System.out.println("Soma Total Calculada no Loop Debug: " + debugSoma);
+        // 1. Soma as horas das optativas DO CURSO que foram concluídas
         int completedOptionalHours = optionalAndEletivas.stream()
                 .filter(d -> completedIds.contains(d.getId()))
                 .mapToInt(Discipline::getWorkload)
                 .sum();
+
+        // 2. ADICIONA as horas das disciplinas EXTRAS
+        // Qualquer disciplina feita fora do curso conta como Optativa Livre
+        int extraHours = extraDisciplines.stream()
+                .mapToInt(Discipline::getWorkload)
+                .sum();
+
+        System.out.println("DEBUG: Horas Optativas do Curso: " + completedOptionalHours);
+        System.out.println("DEBUG: Horas Extras (IUV, etc): " + extraHours);
+
+        completedOptionalHours += extraHours;
 
         if (completedOptionalHours < req.getRequiredOptionalHours()) {
             missing.add("Carga horária optativa insuficiente. Faltam "

@@ -7,9 +7,7 @@ import com.smd.ufccursos.domain.entity.Discipline;
 import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -23,24 +21,36 @@ public class PdfGraduationCheckMapper {
 
     public GraduationCheckRequest toGraduationCheckRequest(PythonPdfResponseDTO pythonData, UUID courseId) {
 
-        System.out.println("--- INICIO DEBUG MAPPER ---");
-        System.out.println("Total disciplinas vindas do Python: " + pythonData.getDisciplines().size());
-
-        // 1. Encontrar os IDs das disciplinas concluídas
-        Set<String> approvedCodes = pythonData.getDisciplines().stream()
-                .filter(d -> "APROVADO MÉDIA".equalsIgnoreCase(d.getSituation()) ||
-                        "APROVADO".equalsIgnoreCase(d.getSituation())) // Seja flexível com a situacao
-                .map(PythonDiscipleneDTOResponse::getDisciplineCode)
+        // 1. Extrair todos os códigos APROVADOS do PDF e limpar espaços
+        Set<String> allApprovedCodes = pythonData.getDisciplines().stream()
+                .filter(d -> isApproved(d.getSituation()))
+                .map(d -> d.getDisciplineCode().trim())
                 .collect(Collectors.toSet());
 
-        System.out.println("Códigos considerados APROVADOS (Enviados para busca no Banco): " + approvedCodes);
+        // 2. ESTRATÉGIA MISTA:
+        // Passo A: Busca Prioritária (Apenas no curso do aluno)
+        List<Discipline> courseDisciplines = disciplineRepositoryPort.findByCourseIdAndDisciplineCodeIn(courseId, allApprovedCodes);
 
-        // 2. Buscar no BD as disciplinas do curso que batem com os códigos aprovados
-        List<Discipline> disciplinesCompleted = disciplineRepositoryPort.findByCourseIdAndDisciplineCodeIn(courseId, approvedCodes);
-
-        Set<UUID> completedDisciplineIds = disciplinesCompleted.stream()
-                .map(Discipline::getId)
+        // Passo B: Identificar o que faltou (quais códigos do PDF não vieram do banco?)
+        Set<String> foundCodes = courseDisciplines.stream()
+                .map(Discipline::getDisciplineCode)
                 .collect(Collectors.toSet());
+
+        List<String> missingCodes = allApprovedCodes.stream()
+                .filter(code -> !foundCodes.contains(code))
+                .toList();
+
+        List<Discipline> extraDisciplines = new ArrayList<>();
+
+        // Passo C: Se houve faltantes, busca globalmente
+        if (!missingCodes.isEmpty()) {
+            extraDisciplines = disciplineRepositoryPort.findByDisiplineCodeIn(new HashSet<>(missingCodes));
+        }
+
+        // 3. Juntar todos os IDs encontrados
+        Set<UUID> completedDisciplineIds = new HashSet<>();
+        courseDisciplines.forEach(d -> completedDisciplineIds.add(d.getId()));
+        extraDisciplines.forEach(d -> completedDisciplineIds.add(d.getId()));
 
         // 3. Extrair horas do resumo
         var sumary = pythonData.getWorkloadSummary();
@@ -69,6 +79,12 @@ public class PdfGraduationCheckMapper {
                 .internshipCompleted(internshipHours)
                 .extensionCompleted(hoursExtension)
                 .build();
+    }
+
+    private boolean isApproved(String situation) {
+        if (situation == null) return false;
+        String s = situation.trim().toUpperCase();
+        return s.contains("APROVADO") || s.contains("DISPENSADO") || s.contains("APROVEITAMENTO");
     }
 
     // Helper para converter "64.00" ou "0" para Integer

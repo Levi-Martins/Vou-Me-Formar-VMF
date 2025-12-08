@@ -108,4 +108,14 @@ public class PostgresDisciplineRepository implements DisciplineRepositoryPort {
         return springDataDisciplineRepository.findByCourse_IdAndDisciplineCodeIn( courseId, approvedCodes);
     }
 
+    @Override
+    public List<Discipline> findByDisiplineCodeIn(Set<String> disiplineCodes) {
+        return springDataDisciplineRepository.findByDisciplineCodeIn(disiplineCodes);
+    }
+
+    @Override
+    public List<Discipline> findAllById(List<UUID> ids) {
+        return springDataDisciplineRepository.findAllByIdIn(ids);
+    }
+
 }

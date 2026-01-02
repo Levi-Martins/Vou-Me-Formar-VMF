@@ -4,90 +4,206 @@ import com.opencsv.CSVReader;
 import com.smd.ufccursos.application.exceptions.ValidationErrorDetail;
 import com.smd.ufccursos.domain.DTO.request.DisciplineDTORequest;
 import com.smd.ufccursos.domain.DTO.response.DisciplineResponseDTO;
-import com.smd.ufccursos.domain.entity.Discipline;
+import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.TypeOfDiscipline;
 import com.smd.ufccursos.domain.exceptions.CSVImportValidationException;
+import com.smd.ufccursos.domain.ports.servicePort.CourseServicePort;
 import com.smd.ufccursos.domain.ports.servicePort.DisciplineServicePort;
+import com.smd.ufccursos.domain.entity.SemesterElectiveRequirement;
 import jakarta.validation.ConstraintViolation;
+import org.apache.poi.ss.usermodel.*;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Validator;
-import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CSVImportService {
 
     private final DisciplineServicePort disciplineServicePort;
     private final Validator validator;
+    private final CourseServicePort courseServicePort;
 
 
-    public CSVImportService(DisciplineServicePort disciplineServicePort, Validator validator) {
+    public CSVImportService(DisciplineServicePort disciplineServicePort, Validator validator, CourseServicePort courseServicePort) {
         this.disciplineServicePort = disciplineServicePort;
         this.validator = validator;
+        this.courseServicePort = courseServicePort;
     }
 
-    public void importFromCSV(InputStream fileInputStream, UUID courseId) throws Exception {
+    public void importFromAnyFile(MultipartFile file, UUID courseId) throws Exception {
+        String filename = file.getOriginalFilename();
+
+        if (filename != null && (filename.endsWith(".xlsx") || filename.endsWith(".xls"))) {
+            importFromExcel(file.getInputStream(), courseId);
+        } else {
+            importFromCSV(file.getInputStream(), courseId);
+        }
+    }
+
+    private void importFromExcel(InputStream fileInputStream, UUID courseId) throws Exception {
+        Course course = prepareCourseValidation(courseId);
+        Set<Integer> allowedElectiveSemesters = getAllowedSemesters(course);
+        boolean courseAllowsElectives = !allowedElectiveSemesters.isEmpty();
+
+        List<DisciplineDTORequest> disciplineDTORequests = new ArrayList<>();
+        Map<String, String> prerequisiteMapping = new HashMap<>();
+
+        try (Workbook workbook = WorkbookFactory.create(fileInputStream)) {
+            Sheet sheet = workbook.getSheetAt(0); // Pega a primeira aba
+
+            int lineNumber = 0;
+            for (Row row : sheet) {
+                lineNumber++;
+                if (lineNumber == 1) continue;
+
+                if (row.getCell(0) == null || row.getCell(0).toString().trim().isEmpty()) continue;
+
+
+                String semesterStr = getCellValueAsString(row.getCell(0));
+                String code = getCellValueAsString(row.getCell(1));
+                String name = getCellValueAsString(row.getCell(2));
+                String workloadStr = getCellValueAsString(row.getCell(3));
+                String creditsStr = getCellValueAsString(row.getCell(4));
+                String nature = getCellValueAsString(row.getCell(5));
+                String prerequisites = getCellValueAsString(row.getCell(6));
+
+                processRowData(lineNumber, semesterStr, code, name, workloadStr, creditsStr, nature, prerequisites,
+                        course, courseAllowsElectives, allowedElectiveSemesters,
+                        disciplineDTORequests, prerequisiteMapping, courseId);
+            }
+        }catch (Exception e) {
+            throw new CSVImportValidationException(
+                    "Erro ao ler arquivo Excel",
+                    List.of(new ValidationErrorDetail("arquivo", "O arquivo enviado não é um Excel válido ou está corrompido.", e.getMessage()))
+            );
+        }
+
+        saveDisciplines(disciplineDTORequests, prerequisiteMapping);
+    }
+
+    private void importFromCSV(InputStream fileInputStream, UUID courseId) throws Exception {
+        Course course = prepareCourseValidation(courseId);
+        Set<Integer> allowedElectiveSemesters = getAllowedSemesters(course);
+        boolean courseAllowsElectives = !allowedElectiveSemesters.isEmpty();
+
+        List<DisciplineDTORequest> disciplineDTORequests = new ArrayList<>();
+        Map<String, String> prerequisiteMapping = new HashMap<>();
+
         try (CSVReader reader = new CSVReader(new InputStreamReader(fileInputStream))) {
             String[] line;
-            Map<String, DisciplineResponseDTO> savedDisciplines = new HashMap<>();
-            List<DisciplineDTORequest> disciplineDTORequests = new ArrayList<>();
-            Map<String, String> prerequisiteMapping = new HashMap<>();
-
-            boolean isHeader = true;
             int lineNumber = 1;
+            boolean isHeader = true;
 
             while ((line = reader.readNext()) != null) {
-                if (isHeader) {
-                    isHeader = false;
-                    lineNumber++;
-                    continue;
-                }
+                if (isHeader) { isHeader = false; lineNumber++; continue; }
 
-                Integer semester = parseInteger(line[0], "semestre");
-                String code = line[1].trim();
-                String name = line[2].trim();
-                Integer workload = parseInteger(line[3], "carga horária");
-                Integer credits = parseInteger(line[4], "créditos");
-                String nature = line[5].trim();
-                String prerequisites = line.length > 6 ? line[6].trim() : "";
+                // Extrair dados do Array
+                String semesterStr = line[0];
+                String code = line[1];
+                String name = line[2];
+                String workloadStr = line[3];
+                String creditsStr = line[4];
+                String nature = line[5];
+                String prerequisites = line.length > 6 ? line[6] : "";
 
-                DisciplineDTORequest dto = new DisciplineDTORequest();
-                dto.setName(name);
-                dto.setSemester(semester);
-                dto.setDisciplineCode(code);
-                dto.setWorkload(workload);
-                dto.setClassCredits(credits);
-                dto.setTypeOfDiscipline(mapNatureToType(nature));
-                dto.setCourseId(courseId);
-                dto.setPrerequisiteIds(Collections.emptySet());
-
-                validateDisciplineDTO(dto, lineNumber);
-
-                disciplineDTORequests.add(dto);
-                prerequisiteMapping.put(code, prerequisites);
-
+                processRowData(lineNumber, semesterStr, code, name, workloadStr, creditsStr, nature, prerequisites,
+                        course, courseAllowsElectives, allowedElectiveSemesters,
+                        disciplineDTORequests, prerequisiteMapping, courseId);
                 lineNumber++;
             }
+        }
+        saveDisciplines(disciplineDTORequests, prerequisiteMapping);
+    }
 
-            for (DisciplineDTORequest disciplineDTORequest : disciplineDTORequests) {
-                validateDisciplineDTO(disciplineDTORequest, lineNumber);
-                DisciplineResponseDTO savedDiscipline = disciplineServicePort.save(disciplineDTORequest);
-                savedDisciplines.put(savedDiscipline.getDisciplineCode(), savedDiscipline);
+    private void processRowData(int lineNumber, String semesterStr, String code, String name,
+                                String workloadStr, String creditsStr, String nature, String prerequisites,
+                                Course course, boolean courseAllowsElectives, Set<Integer> allowedElectiveSemesters,
+                                List<DisciplineDTORequest> requests, Map<String, String> mapping, UUID courseId) {
+
+        Integer semester = parseInteger(semesterStr, "semestre");
+        Integer workload = parseInteger(workloadStr, "carga horária");
+        Integer credits = parseInteger(creditsStr, "créditos");
+
+        code = code != null ? code.trim() : "";
+        name = name != null ? name.trim() : "";
+        nature = nature != null ? nature.trim() : "";
+        prerequisites = prerequisites != null ? prerequisites.trim() : "";
+
+        TypeOfDiscipline type = mapNatureToType(nature);
+
+        // Validações de Regra de Negócio (Eletivas)
+        if (type == TypeOfDiscipline.ELETIVA) {
+            if (!courseAllowsElectives) {
+                throw new CSVImportValidationException("Erro na linha " + lineNumber, List.of(new ValidationErrorDetail("natureza", "O curso não aceita eletivas.", nature)));
             }
-
-            for (DisciplineDTORequest disciplineDTORequest : disciplineDTORequests) {
-                String prerequisites = prerequisiteMapping.get(disciplineDTORequest.getDisciplineCode());
-
-                if (prerequisites != null && !prerequisites.isBlank() && !prerequisites.equalsIgnoreCase("sem pré-requisito")) {
-                    Set<UUID> prerequisiteIds = resolvePrerequisites(prerequisites, savedDisciplines);
-
-                    disciplineDTORequest.setPrerequisiteIds(prerequisiteIds);
-
-                    DisciplineResponseDTO savedDiscipline = savedDisciplines.get(disciplineDTORequest.getDisciplineCode());
-                    disciplineServicePort.update(savedDiscipline.getId(), disciplineDTORequest);
-                }
+            if (!allowedElectiveSemesters.contains(semester)) {
+                throw new CSVImportValidationException("Erro na linha " + lineNumber, List.of(new ValidationErrorDetail("semestre", "Semestre " + semester + " não permite eletivas.", semester.toString())));
             }
+        }
+
+        DisciplineDTORequest dto = new DisciplineDTORequest();
+        dto.setName(name);
+        dto.setSemester(semester);
+        dto.setDisciplineCode(code);
+        dto.setWorkload(workload);
+        dto.setClassCredits(credits);
+        dto.setTypeOfDiscipline(type);
+        dto.setCourseId(courseId);
+        dto.setPrerequisiteIds(Collections.emptySet());
+
+        validateDisciplineDTO(dto, lineNumber);
+
+        requests.add(dto);
+        mapping.put(code, prerequisites);
+    }
+
+    private void saveDisciplines(List<DisciplineDTORequest> requests, Map<String, String> mapping) {
+        Map<String, DisciplineResponseDTO> savedDisciplines = new HashMap<>();
+
+        for (DisciplineDTORequest req : requests) {
+            DisciplineResponseDTO saved = disciplineServicePort.save(req);
+            savedDisciplines.put(saved.getDisciplineCode(), saved);
+        }
+
+        for (DisciplineDTORequest req : requests) {
+            String preReqStr = mapping.get(req.getDisciplineCode());
+            if (preReqStr != null && !preReqStr.isBlank() && !preReqStr.equalsIgnoreCase("sem pré-requisito")) {
+                Set<UUID> ids = resolvePrerequisites(preReqStr, savedDisciplines);
+                req.setPrerequisiteIds(ids);
+                DisciplineResponseDTO saved = savedDisciplines.get(req.getDisciplineCode());
+                disciplineServicePort.update(saved.getId(), req);
+            }
+        }
+    }
+
+    private Course prepareCourseValidation(UUID courseId) {
+        return courseServicePort.findEntityById(courseId);
+    }
+
+    private Set<Integer> getAllowedSemesters(Course course) {
+        if (course.getRequirements() != null && course.getRequirements().getSemesterElectiveRequirementList() != null) {
+            return course.getRequirements().getSemesterElectiveRequirementList().stream()
+                    .map(SemesterElectiveRequirement::getSemester)
+                    .collect(Collectors.toSet());
+        }
+        return new HashSet<>();
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING: return cell.getStringCellValue();
+            case NUMERIC:
+                // Remove decimais se for inteiro (ex: 4.0 -> "4")
+                if (DateUtil.isCellDateFormatted(cell)) return cell.toString();
+                double val = cell.getNumericCellValue();
+                if (val == (long) val) return String.format("%d", (long) val);
+                return String.valueOf(val);
+            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            default: return "";
         }
     }
 

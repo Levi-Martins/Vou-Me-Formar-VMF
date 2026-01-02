@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.UUID;
 
 @RestController
@@ -21,9 +20,9 @@ public class DisciplineImportController {
     @PostMapping
     public ResponseEntity<String> importCSV(@RequestParam("file") MultipartFile file,
                                             @RequestParam("courseId") UUID courseId) throws Exception {
-        try (InputStream inputStream = file.getInputStream()) {
-            csvImportService.importFromCSV(inputStream, courseId);
-            return ResponseEntity.ok("Importação realizada com sucesso!");
-        }
+
+        csvImportService.importFromAnyFile(file, courseId);
+
+        return ResponseEntity.ok("Importação realizada com sucesso!");
     }
 }

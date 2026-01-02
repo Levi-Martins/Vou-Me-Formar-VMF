@@ -48,8 +48,8 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort, Validator validator) {
-        return new CSVImportService(disciplineServicePort, validator);
+    public CSVImportService csvImportService(DisciplineServicePort disciplineServicePort, Validator validator, CourseServicePort courseServicePort) {
+        return new CSVImportService(disciplineServicePort, validator, courseServicePort);
     }
 
     @Bean

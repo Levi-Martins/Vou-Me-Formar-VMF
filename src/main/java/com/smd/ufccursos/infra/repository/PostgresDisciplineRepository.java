@@ -118,4 +118,8 @@ public class PostgresDisciplineRepository implements DisciplineRepositoryPort {
         return springDataDisciplineRepository.findAllByIdIn(ids);
     }
 
+    @Override
+    public List<Discipline> findByPrerequisiteId(UUID prerequisiteId) {
+        return springDataDisciplineRepository.findByPrerequisitesId(prerequisiteId);    }
+
 }

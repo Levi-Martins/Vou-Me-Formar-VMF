@@ -6,6 +6,7 @@ import com.smd.ufccursos.domain.DTO.PaginationTO;
 import com.smd.ufccursos.domain.DTO.response.DisciplineResponseDTO;
 import com.smd.ufccursos.domain.entity.Course;
 import com.smd.ufccursos.domain.entity.Discipline;
+import com.smd.ufccursos.domain.exceptions.BusinessRuleException;
 import com.smd.ufccursos.domain.exceptions.ObjectNotFoundException;
 import com.smd.ufccursos.domain.mapper.DisciplineMapper;
 import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
@@ -98,6 +99,21 @@ public class DisciplineService implements DisciplineServicePort {
 
     @Override
     public void deleteById(UUID id) {
+        Discipline disciplineToDelete = findByIdEntity(id);
+
+        List<Discipline> dependents = disciplineRepositoryPort.findByPrerequisiteId(id);
+
+        if (!dependents.isEmpty()) {
+            String dependentCodes = dependents.stream()
+                    .map(Discipline::getDisciplineCode)
+                    .collect(Collectors.joining(", "));
+
+            throw new BusinessRuleException(
+                    "Não é possível excluir a disciplina " + disciplineToDelete.getDisciplineCode() +
+                            " pois ela é pré-requisito das seguintes disciplinas: " + dependentCodes
+            );
+        }
+
         disciplineRepositoryPort.deleteById(id);
     }
 

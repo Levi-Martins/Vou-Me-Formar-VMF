@@ -30,28 +30,24 @@ public class GraduationCheckService implements GraduationCheckServicePort {
 
         CourseRequirements req = course.getRequirements();
         List<String> missing = new ArrayList<>();
+
         Set<UUID> completedIds = request.getCompletedDisciplineIds() != null ? request.getCompletedDisciplineIds() : Set.of();
 
         List<Discipline> allDisciplines = disciplineRepositoryPort.findByCourseId(course.getId());
 
-        // Pega todos os IDs que pertencem ao curso
         Set<UUID> courseDisciplineIds = allDisciplines.stream()
                 .map(Discipline::getId)
                 .collect(Collectors.toSet());
 
-        // Filtra IDs que estão no request (completos) mas NÃO estão na lista do curso
         List<UUID> extraIds = completedIds.stream()
                 .filter(id -> !courseDisciplineIds.contains(id))
                 .toList();
 
-        // Busca os objetos dessas disciplinas extras no banco
         List<Discipline> extraDisciplines = new ArrayList<>();
         if (!extraIds.isEmpty()) {
-            // OBS: Certifique-se que seu DisciplineRepositoryPort tem o método findAllById
             extraDisciplines = disciplineRepositoryPort.findAllById(extraIds);
         }
 
-        // --- Disciplinas obrigatórias ---
         List<Discipline> mandatory = allDisciplines.stream()
                 .filter(d -> d.getTypeOfDiscipline() == TypeOfDiscipline.OBRIGATORIA)
                 .toList();
@@ -73,37 +69,38 @@ public class GraduationCheckService implements GraduationCheckServicePort {
                 .mapToInt(Discipline::getWorkload)
                 .sum();
 
-        // --- Optativas + Eletivas ---
+
         List<Discipline> optionalAndEletivas = allDisciplines.stream()
                 .filter(d -> d.getTypeOfDiscipline() == TypeOfDiscipline.OPTATIVA
                         || d.getTypeOfDiscipline() == TypeOfDiscipline.ELETIVA)
                 .toList();
 
-        // 1. Soma as horas das optativas DO CURSO que foram concluídas
-        int completedOptionalHours = optionalAndEletivas.stream()
+        int hoursFromCourseDisciplines = optionalAndEletivas.stream()
                 .filter(d -> completedIds.contains(d.getId()))
                 .mapToInt(Discipline::getWorkload)
                 .sum();
 
-        // 2. ADICIONA as horas das disciplinas EXTRAS
-        // Qualquer disciplina feita fora do curso conta como Optativa Livre
-        int extraHours = extraDisciplines.stream()
+        int hoursFromExtraDisciplines = extraDisciplines.stream()
                 .mapToInt(Discipline::getWorkload)
                 .sum();
 
-        System.out.println("DEBUG: Horas Optativas do Curso: " + completedOptionalHours);
-        System.out.println("DEBUG: Horas Extras (IUV, etc): " + extraHours);
 
-        completedOptionalHours += extraHours;
+        int hoursFromManualInput = request.getCompletedOptionalHours() != null ? request.getCompletedOptionalHours() : 0;
 
-        if (completedOptionalHours < req.getRequiredOptionalHours()) {
+        int totalCompletedOptionalHours = hoursFromCourseDisciplines + hoursFromExtraDisciplines + hoursFromManualInput;
+
+        System.out.println("DEBUG: Horas Curso: " + hoursFromCourseDisciplines);
+        System.out.println("DEBUG: Horas Extras: " + hoursFromExtraDisciplines);
+        System.out.println("DEBUG: Horas Manuais: " + hoursFromManualInput);
+        System.out.println("DEBUG: Total Optativas: " + totalCompletedOptionalHours);
+
+        if (totalCompletedOptionalHours < req.getRequiredOptionalHours()) {
             missing.add("Carga horária optativa insuficiente. Faltam "
-                    + (req.getRequiredOptionalHours() - completedOptionalHours) + "h.");
+                    + (req.getRequiredOptionalHours() - totalCompletedOptionalHours) + "h.");
         }
 
         List<SemesterElectiveStatus> semesterStatuses = new ArrayList<>();
 
-        // --- Eletivas por semestre ---
         if (req.getSemesterElectiveRequirementList() != null && !req.getSemesterElectiveRequirementList().isEmpty()) {
             List<Discipline> eletivas = allDisciplines.stream()
                     .filter(d -> d.getTypeOfDiscipline() == TypeOfDiscipline.ELETIVA)
@@ -112,7 +109,6 @@ public class GraduationCheckService implements GraduationCheckServicePort {
             Map<Integer, Long> completedEletivasBySemester = eletivas.stream()
                     .filter(d -> completedIds.contains(d.getId()))
                     .collect(Collectors.groupingBy(Discipline::getSemester, Collectors.counting()));
-
 
             for (SemesterElectiveRequirement ser : req.getSemesterElectiveRequirementList()) {
                 long completed = completedEletivasBySemester.getOrDefault(ser.getSemester(), 0L);
@@ -137,25 +133,31 @@ public class GraduationCheckService implements GraduationCheckServicePort {
         }
 
         // --- Horas complementares ---
-        if (request.getCompletedComplementaryHours() < req.getRequiredComplementaryHours()) {
+        int compHours = request.getCompletedComplementaryHours() != null ? request.getCompletedComplementaryHours() : 0;
+
+        if (compHours < req.getRequiredComplementaryHours()) {
             missing.add("Horas complementares insuficientes. Faltam "
-                    + (req.getRequiredComplementaryHours() - request.getCompletedComplementaryHours()) + "h.");
+                    + (req.getRequiredComplementaryHours() - compHours) + "h.");
         }
 
         // --- TCC / Estágio / Extensão ---
-        if (req.getTccHours() > 0 && (request.getTccCompleted() == null || !request.getTccCompleted())) {
+        if (req.getTccHours() > 0 && !Boolean.TRUE.equals(request.getTccCompleted())) {
             missing.add("TCC não concluído.");
         }
-        if (req.getInternshipHours() > 0 && (request.getInternshipCompleted() == null || request.getInternshipCompleted() == 0)) {
+
+        int internshipHours = request.getInternshipCompleted() != null ? request.getInternshipCompleted() : 0;
+        if (req.getInternshipHours() > 0 && internshipHours == 0) {
             missing.add("Estágio não concluído.");
         }
-        if (req.getExtensionHours() > 0 && (request.getExtensionCompleted() == null || request.getExtensionCompleted() == 0)) {
+
+        int extensionHours = request.getExtensionCompleted() != null ? request.getExtensionCompleted() : 0;
+        if (req.getExtensionHours() > 0 && extensionHours == 0) {
             missing.add("Extensão não concluída.");
         }
 
         boolean eligible = missing.isEmpty();
 
-        return GraduationCheckMapper.toResponse(
+        GraduationCheckResponse response = GraduationCheckMapper.toResponse(
                 eligible,
                 missing,
                 missingMandatory,
@@ -163,13 +165,16 @@ public class GraduationCheckService implements GraduationCheckServicePort {
                 completedMandatory.size(),
                 completedMandatoryHours,
                 req,
-                completedOptionalHours,
-                request.getCompletedComplementaryHours(),
+                totalCompletedOptionalHours,
+                compHours,
                 Boolean.TRUE.equals(request.getTccCompleted()),
-                request.getInternshipCompleted(),
-                request.getExtensionCompleted(),
+                internshipHours,
+                extensionHours,
                 semesterStatuses
         );
-    }
 
+        response.setUnknownDisciplines(request.getUnknownDisciplines() != null ? request.getUnknownDisciplines() : new ArrayList<>());
+
+        return response;
+    }
 }

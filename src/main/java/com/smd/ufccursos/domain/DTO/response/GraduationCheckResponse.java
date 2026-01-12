@@ -23,6 +23,8 @@ public class GraduationCheckResponse {
     private int totalOptionalHours;
     private int completedOptionalHours;
 
+    private List<String> unknownDisciplines;
+
     private int requiredComplementaryHours;
     private int completedComplementaryHours;
 

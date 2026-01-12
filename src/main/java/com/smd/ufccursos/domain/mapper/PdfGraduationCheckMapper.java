@@ -1,7 +1,6 @@
 package com.smd.ufccursos.domain.mapper;
 
 import com.smd.ufccursos.domain.DTO.request.GraduationCheckRequest;
-import com.smd.ufccursos.domain.DTO.response.PythonDiscipleneDTOResponse;
 import com.smd.ufccursos.domain.DTO.response.PythonPdfResponseDTO;
 import com.smd.ufccursos.domain.entity.Discipline;
 import com.smd.ufccursos.domain.ports.repositoryPort.DisciplineRepositoryPort;
@@ -21,17 +20,16 @@ public class PdfGraduationCheckMapper {
 
     public GraduationCheckRequest toGraduationCheckRequest(PythonPdfResponseDTO pythonData, UUID courseId) {
 
-        // 1. Extrair todos os códigos APROVADOS do PDF e limpar espaços
-        Set<String> allApprovedCodes = pythonData.getDisciplines().stream()
+        var approvedPythonDisciplines = pythonData.getDisciplines().stream()
                 .filter(d -> isApproved(d.getSituation()))
+                .toList();
+
+        Set<String> allApprovedCodes = approvedPythonDisciplines.stream()
                 .map(d -> d.getDisciplineCode().trim())
                 .collect(Collectors.toSet());
 
-        // 2. ESTRATÉGIA MISTA:
-        // Passo A: Busca Prioritária (Apenas no curso do aluno)
         List<Discipline> courseDisciplines = disciplineRepositoryPort.findByCourseIdAndDisciplineCodeIn(courseId, allApprovedCodes);
 
-        // Passo B: Identificar o que faltou (quais códigos do PDF não vieram do banco?)
         Set<String> foundCodes = courseDisciplines.stream()
                 .map(Discipline::getDisciplineCode)
                 .collect(Collectors.toSet());
@@ -42,17 +40,24 @@ public class PdfGraduationCheckMapper {
 
         List<Discipline> extraDisciplines = new ArrayList<>();
 
-        // Passo C: Se houve faltantes, busca globalmente
         if (!missingCodes.isEmpty()) {
             extraDisciplines = disciplineRepositoryPort.findByDisiplineCodeIn(new HashSet<>(missingCodes));
         }
 
-        // 3. Juntar todos os IDs encontrados
+        extraDisciplines.forEach(d -> foundCodes.add(d.getDisciplineCode()));
+
         Set<UUID> completedDisciplineIds = new HashSet<>();
         courseDisciplines.forEach(d -> completedDisciplineIds.add(d.getId()));
         extraDisciplines.forEach(d -> completedDisciplineIds.add(d.getId()));
 
-        // 3. Extrair horas do resumo
+        List<String> unknownDisciplinesList = new ArrayList<>();
+        for (var pyDisc : approvedPythonDisciplines) {
+            String code = pyDisc.getDisciplineCode().trim();
+            if (!foundCodes.contains(code)) {
+                unknownDisciplinesList.add(code + " - " + pyDisc.getDisciplineName());
+            }
+        }
+
         var sumary = pythonData.getWorkloadSummary();
 
         Integer complementaryHours = parseIntSafe(
@@ -78,6 +83,8 @@ public class PdfGraduationCheckMapper {
                 .tccCompleted(completeTcc)
                 .internshipCompleted(internshipHours)
                 .extensionCompleted(hoursExtension)
+                .completedOptionalHours(0)
+                .unknownDisciplines(unknownDisciplinesList)
                 .build();
     }
 
@@ -87,13 +94,11 @@ public class PdfGraduationCheckMapper {
         return s.contains("APROVADO") || s.contains("DISPENSADO") || s.contains("APROVEITAMENTO");
     }
 
-    // Helper para converter "64.00" ou "0" para Integer
     private Integer parseIntSafe(String valor) {
         if (valor == null || valor.isBlank() || valor.equals("--")) {
             return 0;
         }
         try {
-            // Remove o ".00" se existir
             double d = Double.parseDouble(valor);
             return (int) d;
         } catch (NumberFormatException e) {

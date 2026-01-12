@@ -2,6 +2,7 @@ package com.smd.ufccursos.domain.DTO.request;
 
 import lombok.*;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,4 +18,6 @@ public class GraduationCheckRequest {
     private Boolean tccCompleted;
     private Integer internshipCompleted;
     private Integer extensionCompleted;
+    private Integer completedOptionalHours;
+    private List<String> unknownDisciplines;
 }

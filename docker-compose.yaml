@@ -6,10 +6,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_APPLICATION_NAME: ufccursos
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/VMF
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: admin000
+      # O Docker vai pegar os valores do arquivo .env automaticamente
+      SPRING_APPLICATION_NAME: ${SPRING_APPLICATION_NAME}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SERVER_PORT: 8080
     depends_on:
       - db
@@ -18,8 +19,8 @@ services:
     image: postgres:14
     restart: always
     environment:
-      POSTGRES_DB: VMF
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin000
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5431:5432"
+      - "${DB_PORT}:5432"
